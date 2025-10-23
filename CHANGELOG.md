@@ -5,6 +5,8 @@ All notable changes to this project will be documented in this file.
 ## 0.2.3 - 2025-10-23
 ### 📦 Other Changes
 - Updates dependencies
+### 🔧 Chores
+- chore: bump version to 0.2.3
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.2.3...v0.2.3
 ## 0.2.3 - 2025-10-23
 ### 📦 Other Changes
