@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 - feat: improve version bump script
 ### 🔧 Chores
 - chore: update Cargo.lock for version 0.2.4
+- chore: bump version to 0.2.5
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.2.4...v0.2.5
 ## 0.2.4 - 2025-10-23
 ### 📦 Other Changes
