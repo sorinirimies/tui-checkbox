@@ -8,7 +8,7 @@
 
 A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui) TUI applications.
 
-## Demo
+## Preview
 ![checkbox](https://github.com/user-attachments/assets/51e2f5f7-4546-4809-a50a-e754f9ecd866)
 
 ## Features
