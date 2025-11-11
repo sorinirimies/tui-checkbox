@@ -4,7 +4,7 @@
 # Run: vhs examples/checkbox.tape
 
 Output "examples/checkbox.gif"
-Set Theme "Aardvark Blue"
+Set Theme "Catppuccin Mocha"
 Set Width 1300
 Set Height 1000
 Set FontSize 16
