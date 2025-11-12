@@ -8,6 +8,22 @@
 
 A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui) TUI applications.
 
+## 🏠 Hosting
+
+This project is hosted on multiple platforms for redundancy:
+
+- 🐙 **GitHub** - [sorinirimies/tui-checkbox](https://github.com/sorinirimies/tui-checkbox)
+  - Primary public repository
+  - CI/CD with GitHub Actions
+  - Issue tracking and discussions
+  
+- 🍵 **Gitea** - Self-hosted mirror (optional)
+  - Full backup and redundancy
+  - CI/CD with Gitea Actions
+  - Independent deployment option
+
+Both repositories are kept in sync automatically. See [DUAL_HOSTING.md](DUAL_HOSTING.md) for setup details.
+
 ## Preview
 ![checkbox](https://github.com/user-attachments/assets/51e2f5f7-4546-4809-a50a-e754f9ecd866)
 
@@ -165,15 +181,55 @@ just test
 just fmt
 just clippy
 
-# Check all
+# Check all (format, clippy, tests)
 just check-all
+
+# Release check (format, clippy, test, build)
+just release-check
 
 # Generate demo GIF (requires VHS)
 just vhs
-
-# Bump version
-just bump 0.2.0
 ```
+
+### Release Workflow
+
+```bash
+# Release to GitHub only
+just release 0.2.0
+
+# Release to Gitea only (if configured)
+just release-gitea 0.2.0
+
+# Release to both GitHub and Gitea
+just release-all 0.2.0
+```
+
+The release commands automatically:
+1. Bump version in Cargo.toml
+2. Update Cargo.lock
+3. Generate changelog with git-cliff
+4. Create git commit and tag
+5. Push to the selected remote(s)
+
+### Dual Hosting Commands
+
+If you have a Gitea instance configured:
+
+```bash
+# Setup Gitea remote
+just setup-gitea git@gitea.yourdomain.com:username/tui-checkbox.git
+
+# Push to both GitHub and Gitea
+just push-all
+
+# Sync Gitea with GitHub
+just sync-gitea
+
+# Show configured remotes
+just remotes
+```
+
+See [DUAL_HOSTING.md](DUAL_HOSTING.md) for complete dual hosting setup guide.
 
 See all available commands:
 
