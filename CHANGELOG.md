@@ -2,9 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.4 - 2025-11-12
+### ♻️ Refactor
+- Refactor release and push commands for dual hosting
+### ➕ Added
+- Add Gitea dual-hosting support and setup scripts
+### 🔄 Updated
+- Update checkbox.tape for faster demo and new theme Speed up checkbox
+- Update README.md
+- Update theme to Catppuccin Mocha in checkbox example
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.3...v0.3.4
 ## 0.3.3 - 2025-10-27
 ### 🔄 Updated
 - Update README.md
+### 🔧 Chores
+- chore: bump version to 0.3.3
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.2.6...v0.3.3
 ## 0.2.6 - 2025-10-23
 ### 🔧 Chores
