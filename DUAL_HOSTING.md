@@ -1,6 +1,6 @@
 # Dual Hosting Strategy: GitHub + Gitea
 
-This guide explains how to host tui-slider on both GitHub and your own Gitea instance.
+This guide explains how to host tui-checkbox on both GitHub and your own Gitea instance.
 
 ## Overview
 
@@ -27,23 +27,26 @@ Both repositories are kept in sync automatically.
 Add your Gitea instance as a second remote:
 
 ```bash
-# Add Gitea remote
-git remote add gitea https://gitea.yourdomain.com/username/tui-slider.git
+# Add Gitea remote using justfile
+just setup-gitea git@gitea.yourdomain.com:username/tui-checkbox.git
 
-# Or with SSH (recommended)
-git remote add gitea git@gitea.yourdomain.com:username/tui-slider.git
+# Or add manually with SSH (recommended)
+git remote add gitea git@gitea.yourdomain.com:username/tui-checkbox.git
+
+# Or with HTTPS
+git remote add gitea https://gitea.yourdomain.com/username/tui-checkbox.git
 
 # Verify remotes
-git remote -v
+just remotes
 ```
 
 You should see:
 
 ```
-origin  git@github.com:sorinirimies/tui-slider.git (fetch)
-origin  git@github.com:sorinirimies/tui-slider.git (push)
-gitea   git@gitea.yourdomain.com:username/tui-slider.git (fetch)
-gitea   git@gitea.yourdomain.com:username/tui-slider.git (push)
+origin  git@github.com:sorinirimies/tui-checkbox.git (fetch)
+origin  git@github.com:sorinirimies/tui-checkbox.git (push)
+gitea   git@gitea.yourdomain.com:username/tui-checkbox.git (fetch)
+gitea   git@gitea.yourdomain.com:username/tui-checkbox.git (push)
 ```
 
 ### 2. Initial Push to Gitea
@@ -61,7 +64,7 @@ git push gitea --tags
 Add Gitea as an additional push URL for origin:
 
 ```bash
-git remote set-url --add --push origin git@gitea.yourdomain.com:username/tui-slider.git
+git remote set-url --add --push origin git@gitea.yourdomain.com:username/tui-checkbox.git
 ```
 
 Now `git push origin` will push to both GitHub and Gitea!
@@ -69,82 +72,98 @@ Now `git push origin` will push to both GitHub and Gitea!
 **Option B: Create an "all" Remote**
 
 ```bash
-git remote add all git@github.com:sorinirimies/tui-slider.git
-git remote set-url --add --push all git@github.com:sorinirimies/tui-slider.git
-git remote set-url --add --push all git@gitea.yourdomain.com:username/tui-slider.git
+git remote add all git@github.com:sorinirimies/tui-checkbox.git
+git remote set-url --add --push all git@github.com:sorinirimies/tui-checkbox.git
+git remote set-url --add --push all git@gitea.yourdomain.com:username/tui-checkbox.git
 
 # Push to both
 git push all
 git push all --tags
 ```
 
-### 4. Update Justfile Commands
+### 4. Justfile Commands (Already Configured!)
 
-Add Gitea-aware commands to your justfile:
+Your justfile already includes all the necessary commands for dual hosting:
 
-```just
+#### Basic Push Commands
+
+```bash
 # Push to GitHub only
-push:
-    git push origin main
+just push
 
-# Push to Gitea only
-push-gitea:
-    git push gitea main
+# Push to Gitea only  
+just push-gitea
 
 # Push to both GitHub and Gitea
-push-all:
-    git push origin main
-    git push gitea main
-    @echo "✅ Pushed to both GitHub and Gitea!"
-
-# Push tags to both
-push-tags-all:
-    git push origin --tags
-    git push gitea --tags
-    @echo "✅ Tags pushed to both remotes!"
-
-# Complete release to both platforms
-push-release-all:
-    git push origin main
-    git push gitea main
-    git push origin --tags
-    git push gitea --tags
-    @echo "✅ Release pushed to both GitHub and Gitea!"
-
-# Show remote status
-remotes:
-    @echo "Configured remotes:"
-    @git remote -v
+just push-all
 ```
 
-Then update the `release` command to use `push-release-all`:
+#### Tag Push Commands
 
-```just
-# Bump version (usage: just bump 0.2.0)
-bump version: check-git-cliff
-    @echo "Bumping version to {{version}}..."
-    @# Update version in Cargo.toml
-    @sed -i.bak 's/^version = ".*"/version = "{{version}}"/' Cargo.toml && rm Cargo.toml.bak
-    @# Update Cargo.lock
-    @cargo build
-    @# Generate changelog for this version
-    @git-cliff --tag v{{version}} -o CHANGELOG.md
-    @# Commit changes
-    @git add Cargo.toml Cargo.lock CHANGELOG.md
-    @git commit -m "chore(release): bump version to {{version}}"
-    @# Create git tag
-    @git tag -a v{{version}} -m "Release v{{version}}"
-    @echo "✅ Version bumped to {{version}}!"
-    @echo "📝 Changelog updated"
-    @echo "🏷️  Tag v{{version}} created"
-    @echo ""
-    @echo "Pushing to both GitHub and Gitea..."
-    @git push origin main
-    @git push gitea main
-    @git push origin v{{version}}
-    @git push gitea v{{version}}
-    @echo "✅ Release v{{version}} pushed to both remotes!"
+```bash
+# Push tags to GitHub only
+just push-tags
+
+# Push tags to both remotes
+just push-tags-all
 ```
+
+#### Release Workflows with Version Bumping
+
+The justfile includes three release workflows:
+
+**Option 1: Release to GitHub Only**
+```bash
+just release 0.2.0
+```
+This will:
+1. Bump version to 0.2.0 in Cargo.toml
+2. Generate changelog with git-cliff
+3. Create git tag v0.2.0
+4. Push to GitHub (main + tag)
+
+**Option 2: Release to Gitea Only**
+```bash
+just release-gitea 0.2.0
+```
+This will:
+1. Bump version to 0.2.0 in Cargo.toml
+2. Generate changelog with git-cliff
+3. Create git tag v0.2.0
+4. Push to Gitea (main + tag)
+
+**Option 3: Release to Both (Recommended)**
+```bash
+just release-all 0.2.0
+```
+This will:
+1. Bump version to 0.2.0 in Cargo.toml
+2. Generate changelog with git-cliff
+3. Create git tag v0.2.0
+4. Push to **both** GitHub and Gitea (main + tag)
+
+#### Other Useful Commands
+
+```bash
+# Push existing release to both remotes (without bumping)
+just push-release-all
+
+# Sync Gitea with GitHub (force push)
+just sync-gitea
+
+# Show configured remotes
+just remotes
+
+# Setup Gitea remote
+just setup-gitea git@gitea.yourdomain.com:username/tui-checkbox.git
+```
+
+The version bumping script (`scripts/bump_version.sh`) handles:
+- Updating version in Cargo.toml
+- Updating Cargo.lock
+- Generating changelog with git-cliff
+- Creating git commit and tag
+- All changes are committed automatically
 
 ## CI/CD for Gitea
 
@@ -256,15 +275,30 @@ git push gitea main
 ### Creating a Release
 
 ```bash
-# Use the updated justfile command
+# Release to GitHub only
 just release 0.2.0
 
+# Release to Gitea only
+just release-gitea 0.2.0
+
+# Release to BOTH GitHub and Gitea (recommended)
+just release-all 0.2.0
+
 # This will automatically:
-# 1. Run all checks
-# 2. Bump version
-# 3. Generate changelog
+# 1. Bump version in Cargo.toml
+# 2. Update Cargo.lock
+# 3. Generate changelog with git-cliff
 # 4. Create commit and tag
-# 5. Push to BOTH GitHub and Gitea
+# 5. Push to the selected remote(s)
+```
+
+**Before releasing, run checks:**
+```bash
+# Run all checks (format, clippy, tests)
+just check-all
+
+# Or run full release check
+just release-check
 ```
 
 ### Pull from Either Remote
@@ -320,22 +354,23 @@ git push origin --tags
 - Control when code goes public
 - Use Gitea for team collaboration
 
-### Strategy 3: Equal Primary (Current Setup)
+### Strategy 3: Equal Primary (Recommended Setup)
 
 **Use Case:** Maximum redundancy and flexibility
 
 ```bash
-# Always push to both
+# Daily development - push to both
 just push-all
 
-# For releases
-just release 0.2.0  # Updated to push to both
+# For releases - push to both with version bump
+just release-all 0.2.0
 ```
 
 **Benefits:**
 - Full redundancy
 - Either can be primary if needed
 - No single point of failure
+- Both remotes always in sync
 
 ## Automatic Mirroring
 
@@ -418,12 +453,24 @@ Add secrets to GitHub:
 Update your README.md to show both hosting locations:
 
 ```markdown
-[![GitHub](https://img.shields.io/badge/GitHub-sorinirimies%2Ftui--slider-blue?logo=github)](https://github.com/sorinirimies/tui-slider)
-[![Gitea](https://img.shields.io/badge/Gitea-self--hosted-green?logo=gitea)](https://gitea.yourdomain.com/username/tui-slider)
+[![GitHub](https://img.shields.io/badge/GitHub-sorinirimies%2Ftui--checkbox-blue?logo=github)](https://github.com/sorinirimies/tui-checkbox)
+[![Gitea](https://img.shields.io/badge/Gitea-self--hosted-green?logo=gitea)](https://gitea.yourdomain.com/username/tui-checkbox)
 
-Hosted on:
-- 🐙 [GitHub](https://github.com/sorinirimies/tui-slider) - Primary public repository
-- 🍵 [Gitea](https://gitea.yourdomain.com/username/tui-slider) - Self-hosted mirror
+## 🏠 Hosting
+
+This project is hosted on multiple platforms for redundancy:
+
+- 🐙 **GitHub** - [sorinirimies/tui-checkbox](https://github.com/sorinirimies/tui-checkbox)
+  - Primary public repository
+  - CI/CD with GitHub Actions
+  - Issue tracking and discussions
+  
+- 🍵 **Gitea** - [username/tui-checkbox](https://gitea.yourdomain.com/username/tui-checkbox)
+  - Self-hosted mirror
+  - CI/CD with Gitea Actions
+  - Full backup and redundancy
+
+Both repositories are kept in sync automatically. See [DUAL_HOSTING.md](DUAL_HOSTING.md) for details.
 ```
 
 ## Troubleshooting
@@ -518,31 +565,72 @@ git remote rename gitea origin
 ```bash
 # No action needed
 # GitHub is still operational
-# Restore Gitea when ready
+# Continue development normally
 
-# Re-sync after restoration
+# Re-sync after restoration using justfile
+just sync-gitea
+
+# Or manually
 git push gitea --all
 git push gitea --tags
 ```
 
-## Summary Commands
+## Quick Reference Commands
 
+### Initial Setup
 ```bash
-# Initial setup
-git remote add gitea git@gitea.yourdomain.com:username/tui-slider.git
+# Add Gitea remote using justfile
+just setup-gitea git@gitea.yourdomain.com:username/tui-checkbox.git
 
-# Push to both
+# Or manually
+git remote add gitea git@gitea.yourdomain.com:username/tui-checkbox.git
+
+# Initial push to Gitea
+git push gitea --all
+git push gitea --tags
+```
+
+### Daily Development
+```bash
+# Push changes to both remotes
 just push-all
 
-# Release to both
+# Commit and push
+just commit "feat: add new feature"
+just push-all
+```
+
+### Creating Releases
+```bash
+# Release to both GitHub and Gitea (recommended)
+just release-all 0.2.0
+
+# Release to GitHub only
 just release 0.2.0
 
-# Check status
+# Release to Gitea only
+just release-gitea 0.2.0
+```
+
+### Maintenance
+```bash
+# Check remotes status
 just remotes
 
-# Sync manually
-git push gitea main --force
-git push gitea --tags --force
+# Sync Gitea with GitHub (force)
+just sync-gitea
+
+# Push tags to both
+just push-tags-all
+```
+
+### Pre-Release Checks
+```bash
+# Run all checks
+just check-all
+
+# Run full release check (format, clippy, test, build)
+just release-check
 ```
 
 ## Resources
