@@ -9,6 +9,8 @@ All notable changes to this project will be documented in this file.
 - Document dual hosting setup and expand justfile commands
 ### 🔄 Updated
 - Update dual hosting guide for tui-checkbox and justfile commands
+### 🔧 Chores
+- chore: bump version to 0.3.5
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.5
 ## 0.3.4 - 2025-11-12
 ### ♻️ Refactor
