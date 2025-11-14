@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 ### 🔧 Chores
 - chore: bump version to 0.3.5
 - chore: bump version to 0.3.6
+- chore: bump version to 0.3.7
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.7
 ## 0.3.4 - 2025-11-12
 ### ♻️ Refactor
