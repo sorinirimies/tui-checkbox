@@ -45,6 +45,7 @@
 
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
+#![allow(clippy::cast_possible_truncation)] // Terminal dimensions are always small
 
 use std::borrow::Cow;
 
@@ -597,7 +598,7 @@ impl Checkbox<'_> {
         // Handle wrapping if enabled
         let label_lines = if self.wrap_label {
             let available_width = area.width.saturating_sub(checkbox_width + space_width);
-            self.wrap_text(&label, available_width)
+            Self::wrap_text(&label, available_width)
         } else {
             vec![label]
         };
@@ -714,7 +715,7 @@ impl Checkbox<'_> {
 
         // Handle wrapping if enabled
         let label_lines = if self.wrap_label {
-            self.wrap_text(&label, area.width)
+            Self::wrap_text(&label, area.width)
         } else {
             vec![label]
         };
@@ -816,7 +817,7 @@ impl Checkbox<'_> {
         }
     }
 
-    fn wrap_text(&self, line: &Line<'_>, max_width: u16) -> Vec<Line<'static>> {
+    fn wrap_text(line: &Line<'_>, max_width: u16) -> Vec<Line<'static>> {
         if max_width == 0 {
             let owned = Line::from(
                 line.spans
@@ -837,11 +838,7 @@ impl Checkbox<'_> {
 
             for (i, word) in words.iter().enumerate() {
                 let word_width = word.chars().count() as u16;
-                let space_width = if i > 0 || !current_line.is_empty() {
-                    1
-                } else {
-                    0
-                };
+                let space_width = u16::from(i > 0 || !current_line.is_empty());
 
                 if current_width + space_width + word_width > max_width && !current_line.is_empty()
                 {
@@ -850,11 +847,9 @@ impl Checkbox<'_> {
                     current_width = 0;
                 }
 
-                if !current_line.is_empty() || i > 0 {
-                    if i > 0 {
-                        current_line.push(Span::styled(String::from(" "), span.style));
-                        current_width += 1;
-                    }
+                if i > 0 {
+                    current_line.push(Span::styled(String::from(" "), span.style));
+                    current_width += 1;
                 }
 
                 current_line.push(Span::styled(String::from(*word), span.style));

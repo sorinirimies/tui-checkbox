@@ -101,7 +101,7 @@ changelog-update: check-git-cliff
     @echo "✅ Changelog updated from all git history!"
 
 # Bump version (usage: just bump 0.2.0)
-bump version: check-git-cliff
+bump version: check-all check-git-cliff
     @echo "Bumping version to {{version}}..."
     @./scripts/bump_version.sh {{version}}
 
@@ -176,21 +176,21 @@ push-tags-all:
     git push gitea --tags
     @echo "✅ Tags pushed to both GitHub and Gitea!"
 
-# Full release workflow: bump version and push to GitHub
+# Full release workflow: run checks, bump version, and push to GitHub
 release version: (bump version)
     @echo "Pushing to GitHub..."
     git push origin main
     git push origin v{{version}}
     @echo "✅ Release v{{version}} complete on GitHub!"
 
-# Full release workflow: bump version and push to Gitea
+# Full release workflow: run checks, bump version, and push to Gitea
 release-gitea version: (bump version)
     @echo "Pushing to Gitea..."
     git push gitea main
     git push gitea v{{version}}
     @echo "✅ Release v{{version}} complete on Gitea!"
 
-# Full release workflow: bump version and push to both GitHub and Gitea
+# Full release workflow: run checks, bump version, and push to both GitHub and Gitea
 release-all version: (bump version)
     @echo "Pushing to both GitHub and Gitea..."
     git push origin main
