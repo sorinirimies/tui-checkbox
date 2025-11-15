@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.0 - 2025-11-15
+### ♻️ Refactor
+- Refactor Checkbox label wrapping and clean up justfile
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.9...v0.4.0
 ## 0.3.9 - 2025-11-15
 ### ➕ Added
 - Add full release workflow commands for GitHub and Gitea
@@ -18,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - chore: bump version to 0.3.6
 - chore: bump version to 0.3.7
 - chore: bump version to 0.3.8
+- chore: bump version to 0.3.9
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.9
 ## 0.3.4 - 2025-11-12
 ### ♻️ Refactor
