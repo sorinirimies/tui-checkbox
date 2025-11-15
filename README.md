@@ -332,8 +332,6 @@ just sync-gitea
 just remotes
 ```
 
-See [DUAL_HOSTING.md](DUAL_HOSTING.md) for complete dual hosting setup guide.
-
 See all available commands:
 
 ```bash
@@ -346,7 +344,14 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please follow these guidelines:
+
+1. **Fork the repository** on GitHub
+2. **Create a feature branch** from `main`
+3. **Make your changes** with clear commit messages
+4. **Submit a pull request** to the main repository
+
+All contributions must be made through GitHub pull requests from your fork. Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## Acknowledgments
 
