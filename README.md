@@ -32,7 +32,11 @@ Both repositories are kept in sync automatically. See [DUAL_HOSTING.md](DUAL_HOS
 - ☑️ Simple checkbox with label
 - 🎨 Customizable styling for checkbox and label separately
 - 🔤 Custom symbols (unicode, emoji, ASCII)
-- 📦 Optional block wrapper
+- 📦 Block wrapper - **optional**
+- 📍 Label positioning (right, left, top, bottom) - **optional**
+- ↔️ Horizontal & vertical alignment - **optional**
+- 📏 Width constraints (min/max) - **optional**
+- 📝 Text wrapping for long labels - **optional**
 - ⚡ Zero-cost abstractions
 
 ## Installation
@@ -77,6 +81,121 @@ use ratatui::widgets::Block;
 let checkbox = Checkbox::new("Accept terms", false)
     .block(Block::bordered().title("Settings"));
 ```
+
+## Label Positioning
+
+Control where the label appears relative to the checkbox symbol.
+
+> **Note**: All layout features are **optional**! The checkbox works perfectly with sensible defaults. Only use these methods when you need to customize the layout.
+
+```rust
+use tui_checkbox::{Checkbox, LabelPosition};
+
+// Simple checkbox - works great with defaults!
+Checkbox::new("Enable feature", true);
+
+// Label on the left (optional customization)
+Checkbox::new("Enable feature", true)
+    .label_position(LabelPosition::Left);
+
+// Label on top (optional customization)
+Checkbox::new("Enable feature", false)
+    .label_position(LabelPosition::Top);
+
+// Label on bottom (optional customization)
+Checkbox::new("Enable feature", false)
+    .label_position(LabelPosition::Bottom);
+```
+
+**Defaults**: Label on the right (standard checkbox style)
+
+### Alignment (Optional)
+
+Align the checkbox content within its area. Only needed for specific layouts.
+
+```rust
+use tui_checkbox::{Checkbox, HorizontalAlignment, VerticalAlignment};
+
+// Horizontal alignment (optional)
+Checkbox::new("Centered", true)
+    .horizontal_alignment(HorizontalAlignment::Center);
+
+Checkbox::new("Right", true)
+    .horizontal_alignment(HorizontalAlignment::Right);
+
+// Vertical alignment (optional)
+Checkbox::new("Middle", false)
+    .vertical_alignment(VerticalAlignment::Center);
+
+Checkbox::new("Bottom", false)
+    .vertical_alignment(VerticalAlignment::Bottom);
+```
+
+**Defaults**: Left and top aligned
+
+### Width Constraints & Text Wrapping (Optional)
+
+Set minimum and maximum width constraints, and enable text wrapping when needed.
+
+```rust
+// Minimum width (optional)
+Checkbox::new("Small label", true)
+    .min_width(30);
+
+// Maximum width (optional)
+Checkbox::new("This is a very long label that will be constrained", false)
+    .max_width(25);
+
+// Text wrapping (optional - for long labels)
+Checkbox::new("This is a very long label that demonstrates text wrapping", true)
+    .wrap_label(true)
+    .max_width(30);
+```
+
+**Defaults**: No width constraints, no wrapping
+
+## Layout Examples
+
+### Label Position Example
+
+See all four label positions in action:
+
+```bash
+cargo run --example checkbox_label_position
+```
+
+This demonstrates: right, left, top, and bottom label positions.
+
+![Label Position Demo](examples/vhs/checkbox_label_position.gif)
+
+### Alignment Example
+
+See horizontal and vertical alignment:
+
+```bash
+cargo run --example checkbox_alignment
+```
+
+This demonstrates:
+- Horizontal alignment: left, center, right
+- Vertical alignment: top, center, bottom
+
+![Alignment Demo](examples/vhs/checkbox_alignment_demo.gif)
+
+### Width & Wrapping Example
+
+See width constraints and text wrapping:
+
+```bash
+cargo run --example checkbox_width_wrapping
+```
+
+This demonstrates:
+- Minimum and maximum width constraints
+- Text wrapping (enabled vs disabled)
+- Combined features
+
+![Width & Wrapping Demo](examples/vhs/checkbox_width_wrapping.gif)
 
 ## Examples
 
