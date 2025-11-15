@@ -8,22 +8,6 @@
 
 A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui) TUI applications.
 
-## 🏠 Hosting
-
-This project is hosted on multiple platforms for redundancy:
-
-- 🐙 **GitHub** - [sorinirimies/tui-checkbox](https://github.com/sorinirimies/tui-checkbox)
-  - Primary public repository
-  - CI/CD with GitHub Actions
-  - Issue tracking and discussions
-  
-- 🍵 **Gitea** - Self-hosted mirror (optional)
-  - Full backup and redundancy
-  - CI/CD with Gitea Actions
-  - Independent deployment option
-
-Both repositories are kept in sync automatically. See [DUAL_HOSTING.md](DUAL_HOSTING.md) for setup details.
-
 ## Preview
 ![checkbox](https://github.com/user-attachments/assets/51e2f5f7-4546-4809-a50a-e754f9ecd866)
 
