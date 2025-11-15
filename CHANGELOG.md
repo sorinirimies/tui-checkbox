@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.3.7 - 2025-11-14
+### ➕ Added
+- Add full release workflow commands for GitHub and Gitea
+### 📦 Other Changes
+- Document dual hosting setup and expand justfile commands
+### 🔄 Updated
+- Update dual hosting guide for tui-checkbox and justfile commands
+### 🔧 Chores
+- chore: bump version to 0.3.5
+- chore: bump version to 0.3.6
+- chore: bump version to 0.3.7
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.7
 ## 0.3.4 - 2025-11-12
 ### ♻️ Refactor
 - Refactor release and push commands for dual hosting
@@ -11,6 +23,8 @@ All notable changes to this project will be documented in this file.
 - Update checkbox.tape for faster demo and new theme Speed up checkbox
 - Update README.md
 - Update theme to Catppuccin Mocha in checkbox example
+### 🔧 Chores
+- chore: bump version to 0.3.4
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.3...v0.3.4
 ## 0.3.3 - 2025-10-27
 ### 🔄 Updated
