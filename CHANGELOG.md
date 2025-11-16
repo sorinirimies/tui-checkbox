@@ -2,9 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.1 - 2025-11-16
+### ➕ Added
+- Add scripts for publish checks and just setup
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.0...v0.4.1
 ## 0.4.0 - 2025-11-15
 ### ♻️ Refactor
 - Refactor Checkbox label wrapping and clean up justfile
+### 🔧 Chores
+- chore: bump version to 0.4.0
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.9...v0.4.0
 ## 0.3.9 - 2025-11-15
 ### ➕ Added
