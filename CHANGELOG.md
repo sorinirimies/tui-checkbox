@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.3 - 2026-02-20
+### 🔄 Updated
+- Update tui-checkbox to 0.4.2 and improve bump_version.sh
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.2...v0.4.3
 ## 0.4.2 - 2026-02-20
 ### ♻️ Refactor
 - Refactor release and push commands for dual hosting
@@ -32,6 +36,7 @@ All notable changes to this project will be documented in this file.
 - chore: bump version to 0.3.9
 - chore: bump version to 0.4.0
 - chore: bump version to 0.4.1
+- chore: bump version to 0.4.2
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.3...v0.4.2
 ## 0.3.3 - 2025-10-27
 ### 🔄 Updated
