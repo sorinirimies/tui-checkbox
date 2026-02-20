@@ -2,46 +2,37 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.4.1 - 2025-11-16
-### ➕ Added
-- Add scripts for publish checks and just setup
-**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.0...v0.4.1
-## 0.4.0 - 2025-11-15
+## 0.4.2 - 2026-02-20
 ### ♻️ Refactor
+- Refactor release and push commands for dual hosting
 - Refactor Checkbox label wrapping and clean up justfile
-### 🔧 Chores
-- chore: bump version to 0.4.0
-**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.9...v0.4.0
-## 0.3.9 - 2025-11-15
 ### ➕ Added
+- Add Gitea dual-hosting support and setup scripts
 - Add full release workflow commands for GitHub and Gitea
 - Add label positioning, alignment, width, and wrapping options
 - Add pull commands for GitHub and Gitea; remove hosting info from README
+- Add scripts for publish checks and just setup
 ### 📦 Other Changes
 - Document dual hosting setup and expand justfile commands
 - Merge branch 'main' of ssh://192.168.1.204:30009/sorin/tui-checkbox
+- Create JUSTFILE_PATTERNS.md
 ### 🔄 Updated
+- Update checkbox.tape for faster demo and new theme Speed up checkbox
+- Update README.md
+- Update theme to Catppuccin Mocha in checkbox example
 - Update dual hosting guide for tui-checkbox and justfile commands
 - Update README contributing section and remove dual hosting note
+- Update ratatui to 0.30 and crossterm to 0.29
 ### 🔧 Chores
+- chore: bump version to 0.3.4
 - chore: bump version to 0.3.5
 - chore: bump version to 0.3.6
 - chore: bump version to 0.3.7
 - chore: bump version to 0.3.8
 - chore: bump version to 0.3.9
-**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.9
-## 0.3.4 - 2025-11-12
-### ♻️ Refactor
-- Refactor release and push commands for dual hosting
-### ➕ Added
-- Add Gitea dual-hosting support and setup scripts
-### 🔄 Updated
-- Update checkbox.tape for faster demo and new theme Speed up checkbox
-- Update README.md
-- Update theme to Catppuccin Mocha in checkbox example
-### 🔧 Chores
-- chore: bump version to 0.3.4
-**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.3...v0.3.4
+- chore: bump version to 0.4.0
+- chore: bump version to 0.4.1
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.3...v0.4.2
 ## 0.3.3 - 2025-10-27
 ### 🔄 Updated
 - Update README.md
