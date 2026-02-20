@@ -11,6 +11,13 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+# Detect OS for sed compatibility
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SED_INPLACE() { sed -i '' "$@"; }
+else
+    SED_INPLACE() { sed -i "$@"; }
+fi
+
 # Check if version argument is provided
 if [ -z "$1" ]; then
     echo -e "${RED}Error: Version number required${NC}"
@@ -35,8 +42,9 @@ CURRENT_VERSION=$(grep '^version = ' Cargo.toml | head -1 | sed 's/version = "\(
 echo -e "Current version: ${CURRENT_VERSION}"
 echo -e "New version: ${NEW_VERSION}"
 
-# Ask for confirmation
-read -p "Continue? (y/n) " -n 1 -r
+# Ask for confirmation (read from /dev/tty directly so just's stdin redirection doesn't swallow input)
+printf "Continue? (y/n) "
+read -r REPLY < /dev/tty
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo -e "${YELLOW}Aborted${NC}"
@@ -45,12 +53,12 @@ fi
 
 # Update Cargo.toml
 echo -e "${GREEN}Updating Cargo.toml...${NC}"
-sed -i "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" Cargo.toml
+SED_INPLACE "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" Cargo.toml
 
 # Update README.md version badge if it exists
 echo -e "${GREEN}Updating README.md...${NC}"
 if grep -q "version-[0-9]*\.[0-9]*\.[0-9]*-blue" README.md 2>/dev/null; then
-    sed -i "s/version-[0-9]*\.[0-9]*\.[0-9]*-blue/version-${NEW_VERSION}-blue/" README.md
+    SED_INPLACE "s/version-[0-9]*\.[0-9]*\.[0-9]*-blue/version-${NEW_VERSION}-blue/" README.md
 fi
 
 # Update Cargo.lock
