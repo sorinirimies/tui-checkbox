@@ -82,21 +82,19 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
                         ViewMode::ApiShowcase => ViewMode::Interactive,
                     };
                 }
-                KeyCode::Up | KeyCode::Char('k') => {
-                    if app.mode == ViewMode::Interactive && app.selected > 0 {
-                        app.selected -= 1;
-                    }
+                KeyCode::Up | KeyCode::Char('k')
+                    if app.mode == ViewMode::Interactive && app.selected > 0 =>
+                {
+                    app.selected -= 1;
                 }
-                KeyCode::Down | KeyCode::Char('j') => {
-                    if app.mode == ViewMode::Interactive && app.selected < app.checkboxes.len() - 1
-                    {
-                        app.selected += 1;
-                    }
+                KeyCode::Down | KeyCode::Char('j')
+                    if app.mode == ViewMode::Interactive
+                        && app.selected < app.checkboxes.len() - 1 =>
+                {
+                    app.selected += 1;
                 }
-                KeyCode::Char(' ') | KeyCode::Enter => {
-                    if app.mode == ViewMode::Interactive {
-                        app.checkboxes[app.selected] = !app.checkboxes[app.selected];
-                    }
+                KeyCode::Char(' ') | KeyCode::Enter if app.mode == ViewMode::Interactive => {
+                    app.checkboxes[app.selected] = !app.checkboxes[app.selected];
                 }
                 _ => {}
             }
