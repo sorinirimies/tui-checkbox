@@ -2,9 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.2 - 2026-04-23
+### 📦 Other Changes
+- Create JUSTFILE_PATTERNS.md
+- Migrate all shell scripts to Nushell, add Nu test suite
+### 🔧 Chores
+- chore(deps): upgrade ratatui 0.29→0.30, crossterm 0.28→0.29, fix clippy lints 2026-04-23
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.1...v0.4.2
 ## 0.4.1 - 2025-11-16
 ### ➕ Added
 - Add scripts for publish checks and just setup
+### 🔧 Chores
+- chore: bump version to 0.4.1
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.0...v0.4.1
 ## 0.4.0 - 2025-11-15
 ### ♻️ Refactor
@@ -14,22 +23,31 @@ All notable changes to this project will be documented in this file.
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.9...v0.4.0
 ## 0.3.9 - 2025-11-15
 ### ➕ Added
-- Add full release workflow commands for GitHub and Gitea
-- Add label positioning, alignment, width, and wrapping options
 - Add pull commands for GitHub and Gitea; remove hosting info from README
 ### 📦 Other Changes
-- Document dual hosting setup and expand justfile commands
 - Merge branch 'main' of ssh://192.168.1.204:30009/sorin/tui-checkbox
 ### 🔄 Updated
-- Update dual hosting guide for tui-checkbox and justfile commands
 - Update README contributing section and remove dual hosting note
+### 🔧 Chores
+- chore: bump version to 0.3.9
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.8...v0.3.9
+## 0.3.8 - 2025-11-14
+### 🔧 Chores
+- chore: bump version to 0.3.8
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.7...v0.3.8
+## 0.3.7 - 2025-11-14
+### ➕ Added
+- Add full release workflow commands for GitHub and Gitea
+- Add label positioning, alignment, width, and wrapping options
+### 📦 Other Changes
+- Document dual hosting setup and expand justfile commands
+### 🔄 Updated
+- Update dual hosting guide for tui-checkbox and justfile commands
 ### 🔧 Chores
 - chore: bump version to 0.3.5
 - chore: bump version to 0.3.6
 - chore: bump version to 0.3.7
-- chore: bump version to 0.3.8
-- chore: bump version to 0.3.9
-**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.9
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.3.4...v0.3.7
 ## 0.3.4 - 2025-11-12
 ### ♻️ Refactor
 - Refactor release and push commands for dual hosting
