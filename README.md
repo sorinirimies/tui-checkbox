@@ -29,8 +29,8 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tui-checkbox = "0.2.0"
-ratatui = "0.29"
+tui-checkbox = "0.4.3"
+ratatui = "0.30"
 ```
 
 Or install with cargo:
@@ -38,6 +38,8 @@ Or install with cargo:
 ```bash
 cargo add tui-checkbox
 ```
+
+See the latest version and full metadata on [crates.io](https://crates.io/crates/tui-checkbox).
 
 ## Quick Start
 

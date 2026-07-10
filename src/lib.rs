@@ -83,6 +83,17 @@ pub enum HorizontalAlignment {
     Right,
 }
 
+impl HorizontalAlignment {
+    /// Computes the horizontal offset for `content` width within an `available` width.
+    const fn offset(self, available: u16, content: u16) -> u16 {
+        match self {
+            Self::Left => 0,
+            Self::Center => available.saturating_sub(content) / 2,
+            Self::Right => available.saturating_sub(content),
+        }
+    }
+}
+
 /// Vertical alignment of content within its area.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum VerticalAlignment {
@@ -93,6 +104,27 @@ pub enum VerticalAlignment {
     Center,
     /// Align to the bottom
     Bottom,
+}
+
+impl VerticalAlignment {
+    /// Computes the vertical offset for `content` height within an `available` height.
+    const fn offset(self, available: u16, content: u16) -> u16 {
+        match self {
+            Self::Top => 0,
+            Self::Center => available.saturating_sub(content) / 2,
+            Self::Bottom => available.saturating_sub(content),
+        }
+    }
+}
+
+/// Converts a borrowed [`Line`] into an owned `Line<'static>` by cloning span contents.
+fn to_owned_line(line: &Line<'_>) -> Line<'static> {
+    Line::from(
+        line.spans
+            .iter()
+            .map(|s| Span::styled(s.content.to_string(), s.style))
+            .collect::<Vec<_>>(),
+    )
 }
 
 /// A widget that displays a checkbox with a label.
@@ -562,13 +594,7 @@ impl Checkbox<'_> {
         // Create checkbox and label spans
         let checkbox_span = Span::styled(symbol.as_ref(), checkbox_style);
         let styled_label = self.label.clone().patch_style(label_style);
-        let owned_label = Line::from(
-            styled_label
-                .spans
-                .iter()
-                .map(|s| Span::styled(s.content.to_string(), s.style))
-                .collect::<Vec<_>>(),
-        );
+        let owned_label = to_owned_line(&styled_label);
 
         // Calculate dimensions based on label position
         match self.label_position {
@@ -616,19 +642,11 @@ impl Checkbox<'_> {
         };
 
         // Calculate horizontal offset based on alignment
-        let x_offset = match self.horizontal_alignment {
-            HorizontalAlignment::Left => 0,
-            HorizontalAlignment::Center => area.width.saturating_sub(total_width) / 2,
-            HorizontalAlignment::Right => area.width.saturating_sub(total_width),
-        };
+        let x_offset = self.horizontal_alignment.offset(area.width, total_width);
 
         // Calculate vertical offset based on alignment
         let content_height = label_lines.len() as u16;
-        let y_offset = match self.vertical_alignment {
-            VerticalAlignment::Top => 0,
-            VerticalAlignment::Center => area.height.saturating_sub(content_height) / 2,
-            VerticalAlignment::Bottom => area.height.saturating_sub(content_height),
-        };
+        let y_offset = self.vertical_alignment.offset(area.height, content_height);
 
         // Render based on label position
         match self.label_position {
@@ -725,11 +743,7 @@ impl Checkbox<'_> {
         let total_height = 1 + label_height; // checkbox + label lines
 
         // Calculate vertical offset
-        let y_offset = match self.vertical_alignment {
-            VerticalAlignment::Top => 0,
-            VerticalAlignment::Center => area.height.saturating_sub(total_height) / 2,
-            VerticalAlignment::Bottom => area.height.saturating_sub(total_height),
-        };
+        let y_offset = self.vertical_alignment.offset(area.height, total_height);
 
         match self.label_position {
             LabelPosition::Top => {
@@ -737,15 +751,9 @@ impl Checkbox<'_> {
                 for (i, label_line) in label_lines.iter().enumerate() {
                     let label_y = area.y + y_offset + i as u16;
                     if label_y < area.y + area.height {
-                        let x_offset = match self.horizontal_alignment {
-                            HorizontalAlignment::Left => 0,
-                            HorizontalAlignment::Center => {
-                                area.width.saturating_sub(label_line.width() as u16) / 2
-                            }
-                            HorizontalAlignment::Right => {
-                                area.width.saturating_sub(label_line.width() as u16)
-                            }
-                        };
+                        let x_offset = self
+                            .horizontal_alignment
+                            .offset(area.width, label_line.width() as u16);
                         let label_area = Rect {
                             x: area.x + x_offset,
                             y: label_y,
@@ -759,13 +767,7 @@ impl Checkbox<'_> {
                 // Render checkbox
                 let checkbox_y = area.y + y_offset + label_height;
                 if checkbox_y < area.y + area.height {
-                    let x_offset = match self.horizontal_alignment {
-                        HorizontalAlignment::Left => 0,
-                        HorizontalAlignment::Center => {
-                            area.width.saturating_sub(checkbox_width) / 2
-                        }
-                        HorizontalAlignment::Right => area.width.saturating_sub(checkbox_width),
-                    };
+                    let x_offset = self.horizontal_alignment.offset(area.width, checkbox_width);
                     let checkbox_area = Rect {
                         x: area.x + x_offset,
                         y: checkbox_y,
@@ -777,11 +779,7 @@ impl Checkbox<'_> {
             }
             LabelPosition::Bottom => {
                 // Render checkbox first
-                let x_offset = match self.horizontal_alignment {
-                    HorizontalAlignment::Left => 0,
-                    HorizontalAlignment::Center => area.width.saturating_sub(checkbox_width) / 2,
-                    HorizontalAlignment::Right => area.width.saturating_sub(checkbox_width),
-                };
+                let x_offset = self.horizontal_alignment.offset(area.width, checkbox_width);
                 let checkbox_area = Rect {
                     x: area.x + x_offset,
                     y: area.y + y_offset,
@@ -794,15 +792,9 @@ impl Checkbox<'_> {
                 for (i, label_line) in label_lines.iter().enumerate() {
                     let label_y = area.y + y_offset + 1 + i as u16;
                     if label_y < area.y + area.height {
-                        let x_offset = match self.horizontal_alignment {
-                            HorizontalAlignment::Left => 0,
-                            HorizontalAlignment::Center => {
-                                area.width.saturating_sub(label_line.width() as u16) / 2
-                            }
-                            HorizontalAlignment::Right => {
-                                area.width.saturating_sub(label_line.width() as u16)
-                            }
-                        };
+                        let x_offset = self
+                            .horizontal_alignment
+                            .offset(area.width, label_line.width() as u16);
                         let label_area = Rect {
                             x: area.x + x_offset,
                             y: label_y,
@@ -819,13 +811,7 @@ impl Checkbox<'_> {
 
     fn wrap_text(line: &Line<'_>, max_width: u16) -> Vec<Line<'static>> {
         if max_width == 0 {
-            let owned = Line::from(
-                line.spans
-                    .iter()
-                    .map(|s| Span::styled(s.content.to_string(), s.style))
-                    .collect::<Vec<_>>(),
-            );
-            return vec![owned];
+            return vec![to_owned_line(line)];
         }
 
         let mut result = Vec::new();
@@ -862,13 +848,7 @@ impl Checkbox<'_> {
         }
 
         if result.is_empty() {
-            let owned = Line::from(
-                line.spans
-                    .iter()
-                    .map(|s| Span::styled(s.content.to_string(), s.style))
-                    .collect::<Vec<_>>(),
-            );
-            result.push(owned);
+            result.push(to_owned_line(line));
         }
 
         result
@@ -1030,54 +1010,29 @@ mod tests {
         assert_eq!(checkbox.label_style.fg, Some(Color::Gray));
     }
 
-    #[test]
-    fn checkbox_emoji_symbols() {
-        let checkbox = Checkbox::new("Test", true)
-            .checked_symbol("✅ ")
-            .unchecked_symbol("⬜ ");
-
-        assert_eq!(checkbox.checked_symbol, "✅ ");
-        assert_eq!(checkbox.unchecked_symbol, "⬜ ");
+    /// Generates a test asserting that custom checked/unchecked symbols are stored verbatim.
+    macro_rules! symbol_tests {
+        ($($name:ident: $checked:expr, $unchecked:expr;)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    let checkbox = Checkbox::new("Test", true)
+                        .checked_symbol($checked)
+                        .unchecked_symbol($unchecked);
+                    assert_eq!(checkbox.checked_symbol, $checked);
+                    assert_eq!(checkbox.unchecked_symbol, $unchecked);
+                }
+            )*
+        };
     }
 
-    #[test]
-    fn checkbox_unicode_symbols() {
-        let checkbox = Checkbox::new("Test", false)
-            .checked_symbol("● ")
-            .unchecked_symbol("○ ");
-
-        assert_eq!(checkbox.checked_symbol, "● ");
-        assert_eq!(checkbox.unchecked_symbol, "○ ");
-    }
-
-    #[test]
-    fn checkbox_arrow_symbols() {
-        let checkbox = Checkbox::new("Test", true)
-            .checked_symbol("▶ ")
-            .unchecked_symbol("▷ ");
-
-        assert_eq!(checkbox.checked_symbol, "▶ ");
-        assert_eq!(checkbox.unchecked_symbol, "▷ ");
-    }
-
-    #[test]
-    fn checkbox_parenthesis_symbols() {
-        let checkbox = Checkbox::new("Test", false)
-            .checked_symbol("(X)")
-            .unchecked_symbol("(O)");
-
-        assert_eq!(checkbox.checked_symbol, "(X)");
-        assert_eq!(checkbox.unchecked_symbol, "(O)");
-    }
-
-    #[test]
-    fn checkbox_minus_symbols() {
-        let checkbox = Checkbox::new("Test", false)
-            .checked_symbol("[+]")
-            .unchecked_symbol("[-]");
-
-        assert_eq!(checkbox.checked_symbol, "[+]");
-        assert_eq!(checkbox.unchecked_symbol, "[-]");
+    symbol_tests! {
+        checkbox_emoji_symbols: "✅ ", "⬜ ";
+        checkbox_unicode_symbols: "● ", "○ ";
+        checkbox_arrow_symbols: "▶ ", "▷ ";
+        checkbox_parenthesis_symbols: "(X)", "(O)";
+        checkbox_minus_symbols: "[+]", "[-]";
+        checkbox_predefined_symbols: symbols::CHECKED_X, symbols::UNCHECKED_SPACE;
     }
 
     #[test]
@@ -1120,5 +1075,142 @@ mod tests {
 
         assert_eq!(checkbox.style.fg, Some(Color::White));
         assert_eq!(checkbox.label_style.fg, Some(Color::Blue));
+    }
+
+    #[test]
+    fn horizontal_alignment_offset() {
+        assert_eq!(HorizontalAlignment::Left.offset(20, 6), 0);
+        assert_eq!(HorizontalAlignment::Center.offset(20, 6), 7);
+        assert_eq!(HorizontalAlignment::Right.offset(20, 6), 14);
+        // Content wider than area saturates to zero.
+        assert_eq!(HorizontalAlignment::Center.offset(4, 10), 0);
+        assert_eq!(HorizontalAlignment::Right.offset(4, 10), 0);
+    }
+
+    #[test]
+    fn vertical_alignment_offset() {
+        assert_eq!(VerticalAlignment::Top.offset(10, 3), 0);
+        assert_eq!(VerticalAlignment::Center.offset(10, 3), 3);
+        assert_eq!(VerticalAlignment::Bottom.offset(10, 3), 7);
+        assert_eq!(VerticalAlignment::Bottom.offset(2, 5), 0);
+    }
+
+    #[test]
+    fn to_owned_line_clones_content_and_style() {
+        let line = Line::from(vec![Span::styled("hi", Style::default().fg(Color::Red))]);
+        let owned = to_owned_line(&line);
+        assert_eq!(owned.spans[0].content, "hi");
+        assert_eq!(owned.spans[0].style.fg, Some(Color::Red));
+    }
+
+    #[test]
+    fn checkbox_builder_defaults() {
+        let checkbox = Checkbox::default();
+        assert_eq!(checkbox.label_position, LabelPosition::Right);
+        assert_eq!(checkbox.horizontal_alignment, HorizontalAlignment::Left);
+        assert_eq!(checkbox.vertical_alignment, VerticalAlignment::Top);
+        assert_eq!(checkbox.min_width, None);
+        assert_eq!(checkbox.max_width, None);
+        assert!(!checkbox.wrap_label);
+    }
+
+    #[test]
+    fn checkbox_layout_builders() {
+        let checkbox = Checkbox::new("Test", true)
+            .label_position(LabelPosition::Left)
+            .horizontal_alignment(HorizontalAlignment::Center)
+            .vertical_alignment(VerticalAlignment::Bottom)
+            .min_width(10)
+            .max_width(40)
+            .wrap_label(true);
+
+        assert_eq!(checkbox.label_position, LabelPosition::Left);
+        assert_eq!(checkbox.horizontal_alignment, HorizontalAlignment::Center);
+        assert_eq!(checkbox.vertical_alignment, VerticalAlignment::Bottom);
+        assert_eq!(checkbox.min_width, Some(10));
+        assert_eq!(checkbox.max_width, Some(40));
+        assert!(checkbox.wrap_label);
+    }
+
+    #[test]
+    fn checkbox_render_label_left() {
+        let checkbox = Checkbox::new("Hi", true).label_position(LabelPosition::Left);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        checkbox.render(buffer.area, &mut buffer);
+        // Label renders before checkbox, so first cell is the label.
+        assert!(buffer
+            .cell(buffer.area.as_position())
+            .unwrap()
+            .symbol()
+            .starts_with('H'));
+    }
+
+    #[test]
+    fn checkbox_render_label_top_and_bottom() {
+        for position in [LabelPosition::Top, LabelPosition::Bottom] {
+            let checkbox = Checkbox::new("Hi", true).label_position(position);
+            let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 3));
+            // Should render both lines without panic.
+            checkbox.render(buffer.area, &mut buffer);
+        }
+    }
+
+    #[test]
+    fn checkbox_render_wrapped_label() {
+        let checkbox = Checkbox::new("one two three four five", false)
+            .wrap_label(true)
+            .max_width(12);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 12, 4));
+        // Wrapping across multiple lines should not panic.
+        checkbox.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn checkbox_min_width_expands_and_max_width_limits() {
+        // min_width does not panic when larger than the area.
+        let checkbox = Checkbox::new("Test", true).min_width(50);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
+        checkbox.render(buffer.area, &mut buffer);
+
+        // max_width smaller than the area constrains rendering.
+        let checkbox = Checkbox::new("A long label here", false).max_width(5);
+        let mut buffer = Buffer::empty(Rect::new(0, 0, 30, 1));
+        checkbox.render(buffer.area, &mut buffer);
+    }
+
+    #[test]
+    fn wrap_text_zero_width_returns_single_line() {
+        let line = Line::from("hello world");
+        let wrapped = Checkbox::wrap_text(&line, 0);
+        assert_eq!(wrapped.len(), 1);
+        assert_eq!(wrapped[0].width(), "hello world".len());
+    }
+
+    #[test]
+    fn wrap_text_splits_on_width() {
+        let line = Line::from("aaa bbb ccc");
+        let wrapped = Checkbox::wrap_text(&line, 4);
+        assert_eq!(wrapped.len(), 3);
+    }
+
+    #[test]
+    fn checkbox_render_alignment_variants() {
+        for h in [
+            HorizontalAlignment::Left,
+            HorizontalAlignment::Center,
+            HorizontalAlignment::Right,
+        ] {
+            for v in [
+                VerticalAlignment::Top,
+                VerticalAlignment::Center,
+                VerticalAlignment::Bottom,
+            ] {
+                let checkbox = Checkbox::new("Test", true)
+                    .horizontal_alignment(h)
+                    .vertical_alignment(v);
+                let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 3));
+                checkbox.render(buffer.area, &mut buffer);
+            }
+        }
     }
 }
