@@ -2,11 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.5 - 2026-07-10
+### 🔄 CI
+- ci: add idempotent crates.io publish (skip if version exists)
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.4...v0.4.5
 ## 0.4.4 - 2026-07-10
 ### ♻️ Refactor
 - refactor: add alignment offset helpers and symbol test macro, expand tests, update deps and README install
+### 📦 Other Changes
+- Migrate all shell scripts to Nushell, add Nu test suite
+- Merge remote-tracking branch 'origin/main'
 ### 🔧 Chores
 - chore: bump version to 0.4.4
+- chore(deps): upgrade ratatui 0.29→0.30, crossterm 0.28→0.29, fix clippy lints 2026-04-23
+- chore: bump version to 0.4.2
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.3...v0.4.4
 ## 0.4.3 - 2026-02-20
 ### 🔄 Updated
