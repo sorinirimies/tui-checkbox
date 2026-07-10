@@ -2,9 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.4 - 2026-07-10
+### ♻️ Refactor
+- refactor: add alignment offset helpers and symbol test macro, expand tests, update deps and README install
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.3...v0.4.4
 ## 0.4.3 - 2026-02-20
 ### 🔄 Updated
 - Update tui-checkbox to 0.4.2 and improve bump_version.sh
+### 🔧 Chores
+- chore: bump version to 0.4.3
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.2...v0.4.3
 ## 0.4.2 - 2026-02-20
 ### ♻️ Refactor
