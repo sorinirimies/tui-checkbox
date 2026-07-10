@@ -650,32 +650,30 @@ impl Checkbox<'_> {
 
         // Render based on label position
         match self.label_position {
-            LabelPosition::Right => {
+            LabelPosition::Right if x_offset < area.width && y_offset < area.height => {
                 // Render checkbox first, then label
-                if x_offset < area.width && y_offset < area.height {
-                    let checkbox_area = Rect {
-                        x: area.x + x_offset,
-                        y: area.y + y_offset,
-                        width: checkbox_width.min(area.width.saturating_sub(x_offset)),
-                        height: 1,
-                    };
-                    Line::from(vec![checkbox_span]).render(checkbox_area, buf);
+                let checkbox_area = Rect {
+                    x: area.x + x_offset,
+                    y: area.y + y_offset,
+                    width: checkbox_width.min(area.width.saturating_sub(x_offset)),
+                    height: 1,
+                };
+                Line::from(vec![checkbox_span]).render(checkbox_area, buf);
 
-                    // Render label lines
-                    for (i, label_line) in label_lines.iter().enumerate() {
-                        let label_x = area.x + x_offset + checkbox_width + space_width;
-                        let label_y = area.y + y_offset + i as u16;
-                        if label_y < area.y + area.height && label_x < area.x + area.width {
-                            let label_area = Rect {
-                                x: label_x,
-                                y: label_y,
-                                width: area
-                                    .width
-                                    .saturating_sub(x_offset + checkbox_width + space_width),
-                                height: 1,
-                            };
-                            label_line.clone().render(label_area, buf);
-                        }
+                // Render label lines
+                for (i, label_line) in label_lines.iter().enumerate() {
+                    let label_x = area.x + x_offset + checkbox_width + space_width;
+                    let label_y = area.y + y_offset + i as u16;
+                    if label_y < area.y + area.height && label_x < area.x + area.width {
+                        let label_area = Rect {
+                            x: label_x,
+                            y: label_y,
+                            width: area
+                                .width
+                                .saturating_sub(x_offset + checkbox_width + space_width),
+                            height: 1,
+                        };
+                        label_line.clone().render(label_area, buf);
                     }
                 }
             }
