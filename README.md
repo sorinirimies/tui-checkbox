@@ -1,6 +1,7 @@
 # tui-checkbox
 
 [![Crates.io](https://img.shields.io/crates/v/tui-checkbox)](https://crates.io/crates/tui-checkbox)
+[![Downloads](https://img.shields.io/crates/d/tui-checkbox)](https://crates.io/crates/tui-checkbox)
 [![Documentation](https://docs.rs/tui-checkbox/badge.svg)](https://docs.rs/tui-checkbox)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://github.com/sorinirimies/tui-checkbox/actions/workflows/release.yml/badge.svg)](https://github.com/sorinirimies/tui-checkbox/actions/workflows/release.yml)
