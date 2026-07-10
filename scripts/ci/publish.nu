@@ -24,8 +24,21 @@
 #   2 chars  → 2/{name}
 #   3 chars  → 3/{first}/{name}
 #   4+ chars → {first-2}/{next-2}/{name}
+# Note: crate names are lowercased here so the path always matches the index.
 export def index-path [name: string]: nothing -> string {
-    let n = ($name | str downcase)
+    # `str downcase` was deprecated in nu 0.114 (renamed to `str lowercase`),
+    # so lowercase via a version-agnostic char map to avoid warnings on any nu.
+    let upper = ($"ABCDEFGHIJKLMNOPQRSTUVWXYZ" | split chars)
+    let lower = ($"abcdefghijklmnopqrstuvwxyz" | split chars)
+    let n = (
+        $name
+        | split chars
+        | each { |c|
+            let i = ($upper | enumerate | where item == $c | get index.0? )
+            if $i == null { $c } else { $lower | get $i }
+        }
+        | str join
+    )
     let chars = ($n | split chars)
     match ($chars | length) {
         1 => $"1/($n)"
@@ -55,10 +68,12 @@ export def is-published [name: string, version: string]: nothing -> bool {
 }
 
 def main [
-    --dry-run,  # Package and verify without uploading
+    --dry-run,      # Package and verify without uploading
+    --allow-dirty,  # Pass --allow-dirty to cargo (needed in CI where release notes are generated)
 ] {
     let name = (open Cargo.toml | get package.name)
     let version = (open Cargo.toml | get package.version)
+    let dirty_args = if $allow_dirty { ["--allow-dirty"] } else { [] }
 
     print $"(ansi cyan)📦 crates.io publish — ($name)@($version)(ansi reset)"
 
@@ -69,7 +84,7 @@ def main [
 
     if $dry_run {
         print "  Running `cargo publish --dry-run`…"
-        cargo publish --dry-run
+        cargo publish --dry-run ...$dirty_args
         print $"(ansi green)✅ Dry-run OK — ($name)@($version) is ready to publish.(ansi reset)"
         return
     }
@@ -81,7 +96,7 @@ def main [
     }
 
     print $"(ansi green)🚀 Publishing ($name)@($version)…(ansi reset)"
-    let result = (do { cargo publish } | complete)
+    let result = (do { cargo publish ...$dirty_args } | complete)
     if ($result.stdout | is-not-empty) { print $result.stdout }
 
     if $result.exit_code != 0 {

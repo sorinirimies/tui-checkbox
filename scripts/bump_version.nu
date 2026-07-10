@@ -119,6 +119,20 @@ def main [
     cargo test --all-features --all-targets
     print $"(ansi green)✓(ansi reset) cargo test passed."
 
+    # 7b. Nushell script tests
+    print ""
+    print $"(ansi cyan)── nu tests ────────────────────────────────────────(ansi reset)"
+    nu scripts/tests/run_all.nu
+    print $"(ansi green)✓(ansi reset) Nushell tests passed."
+
+    # 7c. Packaging dry-run — validates the exact tree we are about to tag.
+    #     The tree is intentionally dirty here (Cargo.toml/lock just changed),
+    #     so --allow-dirty is required for the dry-run.
+    print ""
+    print $"(ansi cyan)── cargo publish --dry-run ────────────────────────(ansi reset)"
+    cargo publish --dry-run --allow-dirty
+    print $"(ansi green)✓(ansi reset) Packaging dry-run passed."
+
     # 8. Changelog (git-cliff)
     print ""
     print $"(ansi cyan)── changelog ───────────────────────────────────────────────(ansi reset)"

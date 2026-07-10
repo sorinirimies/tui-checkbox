@@ -57,7 +57,7 @@ jobs:
       - name: Set up Nushell
         uses: hustcer/setup-nu@v3
         with:
-          version: "*"
+          version: "0.111.0"
 
       - name: Update version and generate changelog
         run: |
@@ -150,5 +150,6 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CRATES_IO_TOKEN }}
         run: |
           # Idempotent publish: skips automatically if this version already
-          # exists on crates.io, or if no token is configured.
-          nu scripts/ci/publish.nu
+          # exists on crates.io, or if no token is configured. --allow-dirty is
+          # required because the release-notes generation above writes temp files.
+          nu scripts/ci/publish.nu --allow-dirty
