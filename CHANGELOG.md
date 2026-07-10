@@ -2,9 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.4.6 - 2026-07-10
+### 📚 Documentation
+- docs: add crates.io downloads badge to README
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.5...v0.4.6
 ## 0.4.5 - 2026-07-10
 ### 🔄 CI
 - ci: add idempotent crates.io publish (skip if version exists)
+- ci: fix release publish (allow-dirty, pinned nu, no deprecated str downcase)
+### 🔧 Chores
+- chore: bump version to 0.4.5
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.4...v0.4.5
 ## 0.4.4 - 2026-07-10
 ### ♻️ Refactor
