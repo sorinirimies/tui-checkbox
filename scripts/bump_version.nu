@@ -17,6 +17,8 @@
 #   6. Creates a Git commit and an annotated tag.
 # ──────────────────────────────────────────────────────────────────────────────
 
+use ci/publish.nu [is-published]
+
 # Validate that a string looks like a semver (MAJOR.MINOR.PATCH with optional pre-release).
 def validate_version [version: string] {
     let pattern = '^\d+\.\d+\.\d+(-[a-zA-Z0-9.]+)?$'
@@ -77,6 +79,15 @@ def main [
     # 1. Validate
     validate_version $new_version
     print $"(ansi green)✓(ansi reset) Version string validated."
+
+    # 1b. Refuse to reuse a version that is already published on crates.io.
+    let crate_name = (open Cargo.toml | get package.name)
+    if (is-published $crate_name $new_version) {
+        print $"(ansi red)✗(ansi reset) ($crate_name)@($new_version) is already published on crates.io."
+        print $"  Pick a higher version — e.g. (ansi green)just release <next-version>(ansi reset)."
+        exit 1
+    }
+    print $"(ansi green)✓(ansi reset) ($new_version) is not yet on crates.io."
 
     # 2. Update package version
     update_package_version $new_version

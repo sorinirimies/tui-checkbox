@@ -155,16 +155,16 @@ bump version: (validate-tag version) (_check-version-changed version) check-rele
 check-publish: _check-nu
     nu scripts/check_publish.nu
 
-# Dry-run publish
-publish-dry: check-all
+# Dry-run publish (verifies packaging; skips if version already on crates.io)
+publish-dry: check-all _check-nu
     @echo "Dry-run: tui-checkbox"
-    cargo publish --dry-run
+    nu scripts/ci/publish.nu --dry-run
 
-# Publish to crates.io
-publish: check-all
+# Publish to crates.io (idempotent: skips if this version already exists)
+publish: check-all _check-nu
     @echo "📦 Publishing tui-checkbox…"
-    cargo publish
-    @echo "✅ tui-checkbox published to crates.io!"
+    nu scripts/ci/publish.nu
+    @echo "✅ tui-checkbox publish step complete!"
 
 # Show what would be released without making any changes
 release-preview: _check-git-cliff
