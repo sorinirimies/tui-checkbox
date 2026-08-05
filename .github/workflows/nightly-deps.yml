@@ -6,6 +6,9 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -32,6 +35,11 @@ jobs:
 
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
+
+      - name: Set up Nushell
+        uses: hustcer/setup-nu@v3
+        with:
+          version: "0.111.0"
 
       # ── cargo-edit (provides `cargo upgrade`) ────────────────────────────────
       - name: Install cargo-edit
@@ -83,6 +91,10 @@ jobs:
         if: steps.check.outputs.has_changes == 'true'
         run: cargo test --all-features --all-targets
 
+      - name: Run Nushell script tests
+        if: steps.check.outputs.has_changes == 'true'
+        run: nu scripts/tests/run_all.nu
+
       # ── Commit and push directly to main ───────────────────────────────────
       # The quality gate already passed — safe to push directly.
       - name: Commit and push dependency updates
@@ -98,6 +110,28 @@ jobs:
           git push origin main
 
           echo "✅ Dependency updates pushed to main."
+
+      # ── Bump patch version and tag ──────────────────────────────────────────
+      # A fresh tag push triggers release.yml (on: push: tags: v*), which
+      # publishes crates.io + GitHub release with the newly bumped deps.
+      - name: Bump patch version and push release tag
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          CURRENT_VERSION=$(grep -m1 '^version = ' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+          NEW_VERSION=$(nu scripts/next_patch_version.nu "$CURRENT_VERSION" --safe)
+          NEW_TAG="v$NEW_VERSION"
+          echo "Bumping version: $CURRENT_VERSION -> $NEW_VERSION"
+
+          sed -i "s/^version = \".*\"/version = \"$NEW_VERSION\"/" Cargo.toml
+          cargo update -p tui-checkbox
+
+          git add Cargo.toml Cargo.lock
+          git commit -m "chore(release): bump version to $NEW_VERSION"
+          git tag "$NEW_TAG"
+          git push origin main
+          git push origin "$NEW_TAG"
+
+          echo "✅ Tagged and pushed $NEW_TAG — release workflow will pick it up."
 
       - name: Nothing to update
         if: steps.check.outputs.has_changes == 'false'
