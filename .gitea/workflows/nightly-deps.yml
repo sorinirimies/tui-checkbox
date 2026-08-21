@@ -133,6 +133,17 @@ jobs:
 
           echo "✅ Tagged and pushed $NEW_TAG — release workflow will pick it up."
 
+          echo "NEW_TAG=$NEW_TAG" >> "$GITHUB_ENV"
+
+      - name: Push release commit and tag to GitHub mirror
+        if: steps.check.outputs.has_changes == 'true' && env.GITHUB_REMOTE_URL != ''
+        env:
+          GITHUB_REMOTE_URL: ${{ secrets.GITHUB_REMOTE_URL }}
+        run: |
+          git remote add github-ci "$GITHUB_REMOTE_URL"
+          git push github-ci main
+          git push github-ci "$NEW_TAG"
+
       - name: Nothing to update
         if: steps.check.outputs.has_changes == 'false'
         run: echo "✅ All dependencies already up to date — nothing to upgrade."
