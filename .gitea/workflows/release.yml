@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to release (e.g. v0.5.0)"
+        required: true
+        default: ""
 
 permissions:
   contents: write
@@ -16,6 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
@@ -43,6 +51,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.tag || github.ref_name }}
           fetch-depth: 0
 
       - name: Set up Rust
@@ -56,8 +65,9 @@ jobs:
 
       - name: Update version and generate changelog
         run: |
+          TAG="${{ github.event.inputs.tag || github.ref_name }}"
           # Extract version from tag (remove 'v' prefix)
-          VERSION=${GITHUB_REF_NAME#v}
+          VERSION=${TAG#v}
           echo "Updating version to: $VERSION"
 
           # Update Cargo.toml version
@@ -67,15 +77,15 @@ jobs:
           git-cliff --config cliff.toml --latest --output CHANGELOG.md
 
           # Generate release notes with git-cliff
-          LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          LAST_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || echo "")
 
           # Generate release changelog using git-cliff
           if [ -n "$LAST_TAG" ]; then
             # Generate changelog between tags
-            git-cliff --config cliff.toml ${LAST_TAG}..${{ github.ref_name }} --strip header > CLIFF_CHANGES.md
+            git-cliff --config cliff.toml ${LAST_TAG}..${TAG} --strip header > CLIFF_CHANGES.md
           else
             # Generate changelog for first release
-            git-cliff --config cliff.toml --tag ${{ github.ref_name }} --strip header > CLIFF_CHANGES.md
+            git-cliff --config cliff.toml --tag ${TAG} --strip header > CLIFF_CHANGES.md
           fi
 
           # Create the release note template

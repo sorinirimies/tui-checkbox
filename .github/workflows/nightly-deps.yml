@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 env:
   CARGO_TERM_COLOR: always
@@ -69,10 +70,15 @@ jobs:
         run: cargo update
 
       # ── Check for changes ────────────────────────────────────────────────────
+      # `cargo upgrade` (cargo-edit) reserializes the whole Cargo.toml via
+      # toml_edit — it can reorder/reformat keys and whitespace even when no
+      # dependency version actually changed. That alone must NOT count as a
+      # real update. Cargo.lock is the ground truth: it only changes when a
+      # resolved dependency version actually moves. Gate on Cargo.lock only.
       - name: Check for changes
         id: check
         run: |
-          if git diff --quiet Cargo.toml Cargo.lock; then
+          if git diff --quiet Cargo.lock; then
             echo "has_changes=false" >> "$GITHUB_OUTPUT"
           else
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
@@ -127,11 +133,25 @@ jobs:
 
           git add Cargo.toml Cargo.lock
           git commit -m "chore(release): bump version to $NEW_VERSION"
-          git tag "$NEW_TAG"
+          git tag -a "$NEW_TAG" -m "Release $NEW_TAG"
           git push origin main
           git push origin "$NEW_TAG"
 
           echo "✅ Tagged and pushed $NEW_TAG — release workflow will pick it up."
+
+      # Pushes authored by GITHUB_TOKEN do NOT trigger other workflows (GitHub's
+      # anti-recursion guard) — so the tag push above will silently NOT start
+      # release.yml. Explicitly dispatch it instead; workflow_dispatch via the
+      # API is exempt from that restriction.
+      - name: Trigger release workflow for the new tag
+        if: steps.check.outputs.has_changes == 'true'
+        run: |
+          NEW_VERSION=$(grep -m1 '^version = ' Cargo.toml | sed -E 's/version = "(.*)"/\1/')
+          TAG="v$NEW_VERSION"
+          echo "🚀 Dispatching release.yml for ${TAG}…"
+          gh workflow run release.yml --repo "${{ github.repository }}" -f tag="${TAG}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Nothing to update
         if: steps.check.outputs.has_changes == 'false'
