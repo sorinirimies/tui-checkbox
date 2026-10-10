@@ -2,9 +2,117 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.5.0 - 2026-10-10
+### ✨ Features
+- feat: upgrade ratatui to 0.30
+### 🔄 CI
+- ci(deps): release only on real Cargo.toml dependency changes; lock-only updates commit without release
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.25...v0.5.0
+## 0.4.25 - 2026-10-10
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-10-10
+- chore(release): bump version to 0.4.25
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.24...v0.4.25
+## 0.4.24 - 2026-10-07
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-10-07
+- chore(release): bump version to 0.4.24
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.23...v0.4.24
+## 0.4.23 - 2026-10-04
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-10-04
+- chore(release): bump version to 0.4.23
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.22...v0.4.23
+## 0.4.22 - 2026-10-03
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-10-03
+- chore(release): bump version to 0.4.22
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.21...v0.4.22
+## 0.4.21 - 2026-10-01
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-10-01
+- chore(release): bump version to 0.4.21
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.20...v0.4.21
+## 0.4.20 - 2026-09-25
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-25
+- chore(release): bump version to 0.4.20
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.19...v0.4.20
+## 0.4.19 - 2026-09-23
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-23
+- chore(release): bump version to 0.4.19
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.18...v0.4.19
+## 0.4.18 - 2026-09-17
+### 🐛 Bug Fixes
+- fix(ci): add release dispatch, gate has_changes on Cargo.lock only, add workflow_dispatch to release.yml
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-17
+- chore(release): bump version to 0.4.18
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.17...v0.4.18
+## 0.4.17 - 2026-09-12
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-12
+- chore(release): bump version to 0.4.17
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.16...v0.4.17
+## 0.4.16 - 2026-09-10
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-10
+- chore(release): bump version to 0.4.16
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.15...v0.4.16
+## 0.4.15 - 2026-09-05
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-05
+- chore(release): bump version to 0.4.15
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.14...v0.4.15
+## 0.4.14 - 2026-09-03
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-03
+- chore(release): bump version to 0.4.14
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.13...v0.4.14
+## 0.4.13 - 2026-09-02
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-09-02
+- chore(release): bump version to 0.4.13
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.12...v0.4.13
+## 0.4.12 - 2026-08-28
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-08-28
+- chore(release): bump version to 0.4.12
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.11...v0.4.12
+## 0.4.11 - 2026-08-24
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-08-24
+- chore(release): bump version to 0.4.11
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.10...v0.4.11
+## 0.4.10 - 2026-08-23
+### 📦 Other Changes
+- justfile: add gitea-nexus-lab remote recipes (push/pull/sync/release)
+- justfile: rename gitea -> gitea-microlab; add full gitea-microlab/-starscream/-nexus-lab parity
+- Add/complete nightly dependency-update automation (Gitea): update deps, quality-gate, bump patch version, tag, push to Gitea + GitHub
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-08-21
+- chore(release): bump version to 0.4.9
+- chore(deps): nightly dependency upgrade 2026-08-23
+- chore(release): bump version to 0.4.10
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.8...v0.4.10
+## 0.4.8 - 2026-08-12
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-08-12
+- chore(release): bump version to 0.4.8
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.7...v0.4.8
+## 0.4.7 - 2026-08-06
+### 🔄 CI
+- ci(nightly-deps): auto-tag releases after dep upgrades, guard against downgrades
+### 🔧 Chores
+- chore(deps): nightly dependency upgrade 2026-08-06
+- chore(release): bump version to 0.4.7
+**Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.6...v0.4.7
 ## 0.4.6 - 2026-07-10
 ### 📚 Documentation
 - docs: add crates.io downloads badge to README
+### 🔧 Chores
+- chore: bump version to 0.4.6
 **Full Changelog**: https://github.com/sorinirimies/tui-checkbox/compare/v0.4.5...v0.4.6
 ## 0.4.5 - 2026-07-10
 ### 🔄 CI
