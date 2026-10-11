@@ -446,3 +446,7 @@ setup-gitea url: _check-nu
 # Migrate this project to dual GitHub + Gitea hosting (interactive)
 migrate-gitea: _check-nu
     nu scripts/migrate_to_gitea.nu
+
+# Security: dependency vulnerability scan (needs `cargo install cargo-audit`)
+audit:
+    cargo audit
