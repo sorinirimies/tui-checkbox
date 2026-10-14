@@ -22,6 +22,7 @@ A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui)
 - ↔️ Horizontal & vertical alignment - **optional**
 - 📏 Width constraints (min/max) - **optional**
 - 📝 Text wrapping for long labels - **optional**
+- 🌈 Shared theming via [`tui-nuances`](https://github.com/sorinirimies/tui-nuances) - **optional** (`theme` feature)
 - ⚡ Zero-cost abstractions
 
 ## Installation
@@ -263,7 +264,14 @@ The `symbols` module provides some common checkbox symbols:
 ## Theming
 
 `tui-checkbox` uses the shared [`tui-nuances`](https://github.com/sorinirimies/tui-nuances) `Theme`,
-so all your TUI components can share one look. Theming is optional; without it the default look is unchanged.
+so all your TUI components can share one look. Theming is optional and **off by default** (no extra dependency). Enable the `theme` feature:
+
+```toml
+[dependencies]
+tui-checkbox = { version = "0.5", features = ["theme"] }
+```
+
+Without it the default look is unchanged.
 
 ```rust
 use tui_checkbox::{Checkbox, Theme, Themed};
@@ -278,7 +286,7 @@ unchecked symbol = `muted`, label = `foreground`.
 
 Pass your app's theme with `ThemeProvider` (`Checkbox::new(..).themed(&app_theme)`) or
 `impl From<&AppTheme> for tui_nuances::Theme` and `.theme(&app_theme)`.
-The `checkbox` example cycles themes with `t` / `T`.
+The `checkbox` example cycles themes with `t` / `T` when run with `--features theme`.
 
 ## Development
 

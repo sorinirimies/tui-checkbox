@@ -50,7 +50,7 @@ build-release:
 
 # Run the checkbox example
 run:
-    cargo run --example checkbox
+    cargo run --example checkbox --features theme
 
 # Watch and auto-run on file changes (requires cargo-watch)
 watch:

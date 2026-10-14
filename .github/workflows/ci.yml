@@ -45,8 +45,14 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - name: Run clippy action
+      - name: Run clippy action (default features)
         uses: clechasseur/rs-clippy-check@v4
+      - name: Run clippy action (all features)
+        uses: clechasseur/rs-clippy-check@v4
+        with:
+          args: --all-targets --all-features -- -D warnings
+      - name: Build without default features
+        run: cargo build --no-default-features
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2
   doc:
@@ -74,7 +80,9 @@ jobs:
       - name: cargo generate-lockfile
         if: hashFiles('Cargo.lock') == ''
         run: cargo generate-lockfile
-      - name: cargo test --locked
+      - name: cargo test --locked (default features)
+        run: cargo test --locked --all-targets
+      - name: cargo test --locked (all features)
         run: cargo test --locked --all-features --all-targets
       - name: Cache Cargo dependencies
         uses: Swatinem/rust-cache@v2

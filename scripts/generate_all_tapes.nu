@@ -3,10 +3,10 @@
 def main [] {
     let root = ($env.FILE_PWD | path dirname)
     cd $root
-    let b = (do { cargo build --release --examples } | complete)
+    let b = (do { cargo build --release --examples --all-features } | complete)
     if $b.exit_code != 0 {
         print -e $b.stderr
-        error make {msg: "cargo build --release --examples failed"}
+        error make {msg: "cargo build --release --examples --all-features failed"}
     }
     for t in (glob examples/vhs/*.tape) {
         print $"vhs ($t)"
