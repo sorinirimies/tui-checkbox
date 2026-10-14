@@ -11,10 +11,11 @@ homepage = "https://github.com/sorinirimies/tui-checkbox"
 keywords = ["tui", "terminal", "ratatui", "checkbox", "widget"]
 categories = ["command-line-interface"]
 readme = "README.md"
+exclude = ["fuzz/", ".github/", ".gitea/"]
 
 [dependencies]
 ratatui = { version = "0.30", default-features = false }
-tui-nuances = { version = "0.1", git = "https://github.com/sorinirimies/tui-nuances", optional = true }
+tui-nuances = { version = "0.1.4", git = "https://github.com/sorinirimies/tui-nuances", optional = true }
 
 [features]
 default = []

@@ -369,6 +369,15 @@ See all available commands:
 just --list
 ```
 
+## Fuzzing
+
+Fuzz targets live in `fuzz/` (needs nightly and `cargo install cargo-fuzz`):
+
+```bash
+cargo +nightly fuzz list
+cargo +nightly fuzz run render_layout
+```
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.

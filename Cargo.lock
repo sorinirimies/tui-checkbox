@@ -1653,8 +1653,8 @@ dependencies = [
 
 [[package]]
 name = "tui-nuances"
-version = "0.1.0"
-source = "git+https://github.com/sorinirimies/tui-nuances#244789f8cf16bafd3bd661221ab8a50af5d8465d"
+version = "0.1.3"
+source = "git+https://github.com/sorinirimies/tui-nuances#c02511a37aadfd15615607214a6d54c76cbe2127"
 dependencies = [
  "ratatui",
 ]

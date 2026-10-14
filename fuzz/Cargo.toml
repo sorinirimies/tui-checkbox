@@ -1,0 +1,47 @@
+[package]
+name = "tui-checkbox-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+arbitrary = { version = "1", features = ["derive"] }
+ratatui = { version = "0.30", default-features = false }
+tui-checkbox = { path = "..", features = ["theme"] }
+
+# Not part of the main crate (needs nightly).
+[workspace]
+
+[[bin]]
+name = "render_basic"
+path = "fuzz_targets/render_basic.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "render_layout"
+path = "fuzz_targets/render_layout.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "render_block_style"
+path = "fuzz_targets/render_block_style.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "symbols_theme"
+path = "fuzz_targets/symbols_theme.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "render_tiny"
+path = "fuzz_targets/render_tiny.rs"
+test = false
+doc = false

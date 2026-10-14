@@ -450,3 +450,15 @@ migrate-gitea: _check-nu
 # Security: dependency vulnerability scan (needs `cargo install cargo-audit`)
 audit:
     cargo audit
+
+# Security: license/ban/source/advisory check (needs `cargo install cargo-deny --locked`)
+deny:
+    cargo deny check
+
+# Fuzz a target (needs nightly + cargo-fuzz): just fuzz render_basic
+fuzz target="render_basic":
+    cargo +nightly fuzz run {{ target }}
+
+# List fuzz targets
+fuzz-list:
+    cargo +nightly fuzz list
