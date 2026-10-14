@@ -57,6 +57,8 @@ use ratatui::widgets::{Block, Widget};
 
 pub mod symbols;
 
+pub use tui_nuances::{Status, Theme, ThemeProvider, ThemeSwitcher, Themed};
+
 /// Position of the label relative to the checkbox symbol.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum LabelPosition {
@@ -188,6 +190,18 @@ pub struct Checkbox<'a> {
     max_width: Option<u16>,
     /// Whether to wrap label text to multiple lines
     wrap_label: bool,
+    /// Styles derived from a shared theme (lowest precedence)
+    theme: Option<ThemeStyles>,
+}
+
+/// Styles derived from a [`Theme`]; explicit per-field styles always win.
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+struct ThemeStyles {
+    base: Style,
+    block: Style,
+    checked: Style,
+    unchecked: Style,
+    label: Style,
 }
 
 impl Default for Checkbox<'_> {
@@ -227,6 +241,7 @@ impl Default for Checkbox<'_> {
             min_width: None,
             max_width: None,
             wrap_label: false,
+            theme: None,
         }
     }
 }
@@ -529,6 +544,44 @@ impl<'a> Checkbox<'a> {
     }
 }
 
+impl Checkbox<'_> {
+    /// Styles the checkbox from a shared [`Theme`].
+    ///
+    /// Role mapping: base = `theme.style()`, block border = `theme.border_style(false)`,
+    /// checked symbol = `primary`, unchecked symbol = `muted`, label = `foreground`.
+    ///
+    /// **Precedence:** explicit [`style`](Self::style),
+    /// [`checkbox_style`](Self::checkbox_style) and [`label_style`](Self::label_style)
+    /// always win over theme defaults, regardless of call order. A theme border style
+    /// is used as the block's base style, so a block's own `border_style` also wins.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::{Checkbox, Theme};
+    ///
+    /// let cb = Checkbox::new("Dark mode", true).theme(&Theme::nord());
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn theme(mut self, theme: impl Into<Theme>) -> Self {
+        let t: Theme = theme.into();
+        self.theme = Some(ThemeStyles {
+            base: t.style(),
+            block: t.border_style(false),
+            checked: Style::default().fg(t.primary),
+            unchecked: Style::default().fg(t.muted),
+            label: Style::default().fg(t.foreground),
+        });
+        self
+    }
+}
+
+impl Themed for Checkbox<'_> {
+    fn apply_theme(self, theme: &Theme) -> Self {
+        self.theme(theme.clone())
+    }
+}
+
 impl Styled for Checkbox<'_> {
     type Item = Self;
 
@@ -550,10 +603,15 @@ impl Widget for Checkbox<'_> {
 
 impl Widget for &Checkbox<'_> {
     fn render(self, area: Rect, buf: &mut Buffer) {
-        buf.set_style(area, self.style);
+        let base = self.base_style();
+        buf.set_style(area, base);
         let inner = if let Some(ref block) = self.block {
             let inner_area = block.inner(area);
-            block.render(area, buf);
+            if let Some(t) = &self.theme {
+                block.clone().style(t.block.patch(base)).render(area, buf);
+            } else {
+                block.render(area, buf);
+            }
             inner_area
         } else {
             area
@@ -563,6 +621,13 @@ impl Widget for &Checkbox<'_> {
 }
 
 impl Checkbox<'_> {
+    /// Theme base style patched by the explicit style.
+    fn base_style(&self) -> Style {
+        self.theme
+            .map_or(Style::default(), |t| t.base)
+            .patch(self.style)
+    }
+
     fn render_checkbox(&self, area: Rect, buf: &mut Buffer) {
         if area.is_empty() {
             return;
@@ -576,8 +641,14 @@ impl Checkbox<'_> {
         };
 
         // Calculate the combined styles
-        let checkbox_style = self.style.patch(self.checkbox_style);
-        let label_style = self.style.patch(self.label_style);
+        let base = self.base_style();
+        let (sym_theme, label_theme) = self
+            .theme
+            .map_or((Style::default(), Style::default()), |t| {
+                (if self.checked { t.checked } else { t.unchecked }, t.label)
+            });
+        let checkbox_style = base.patch(sym_theme).patch(self.checkbox_style);
+        let label_style = base.patch(label_theme).patch(self.label_style);
 
         // Apply width constraints
         let mut render_area = area;
@@ -1209,6 +1280,63 @@ mod tests {
                 let mut buffer = Buffer::empty(Rect::new(0, 0, 20, 3));
                 checkbox.render(buffer.area, &mut buffer);
             }
+        }
+    }
+}
+
+#[cfg(test)]
+mod theme_tests {
+    use super::*;
+    use ratatui::style::Color;
+
+    fn render(cb: Checkbox<'_>) -> Buffer {
+        let area = Rect::new(0, 0, 20, 3);
+        let mut buf = Buffer::empty(area);
+        cb.render(area, &mut buf);
+        buf
+    }
+
+    #[test]
+    fn no_theme_unchanged() {
+        let a = render(Checkbox::new("x", true));
+        assert_eq!(a[(0, 0)].fg, Color::Reset);
+    }
+
+    #[test]
+    fn mapping() {
+        let t = Theme::nord();
+        let b = render(Checkbox::new("x", true).theme(&t));
+        assert_eq!(b[(0, 0)].fg, t.primary);
+        assert_eq!(b[(2, 0)].fg, t.foreground);
+        let b = render(Checkbox::new("x", false).theme(&t));
+        assert_eq!(b[(0, 0)].fg, t.muted);
+    }
+
+    #[test]
+    fn explicit_wins_any_order() {
+        let t = Theme::nord();
+        let before = render(
+            Checkbox::new("x", true)
+                .checkbox_style(Style::default().fg(Color::Red))
+                .theme(&t),
+        );
+        let after = render(
+            Checkbox::new("x", true)
+                .theme(&t)
+                .checkbox_style(Style::default().fg(Color::Red)),
+        );
+        assert_eq!(before, after);
+        assert_eq!(before[(0, 0)].fg, Color::Red);
+    }
+
+    #[test]
+    fn all_themes_render() {
+        for t in Theme::all() {
+            let _ = render(
+                Checkbox::new("x", true)
+                    .block(Block::bordered())
+                    .apply_theme(&t),
+            );
         }
     }
 }

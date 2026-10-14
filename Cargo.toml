@@ -3,7 +3,7 @@ name = "tui-checkbox"
 version = "0.5.0"
 authors = ["Sorin Albu-Irimies <sorinirimies@gmail.com>"]
 edition = "2021"
-rust-version = "1.74.0"
+rust-version = "1.88.0"
 license = "MIT"
 description = "A customizable checkbox widget for Ratatui TUI applications"
 repository = "https://github.com/sorinirimies/tui-checkbox"
@@ -14,6 +14,8 @@ readme = "README.md"
 
 [dependencies]
 ratatui = { version = "0.30", default-features = false }
+# TODO: switch to the crates.io version after tui-nuances is published
+tui-nuances = { git = "https://github.com/sorinirimies/tui-nuances" }
 
 [dev-dependencies]
 color-eyre = "0.6"

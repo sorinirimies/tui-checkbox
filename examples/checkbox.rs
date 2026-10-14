@@ -5,6 +5,7 @@
 //! ## Interactive Mode (Default)
 //! - Navigate with ↑/↓ or k/j
 //! - Toggle checkboxes with Space
+//! - Press t/T to cycle themes (tui-nuances)
 //! - Press Tab to switch to API Showcase
 //! - Press q or Esc to quit
 //!
@@ -23,7 +24,7 @@ use ratatui::{
     widgets::{Block, Padding, Paragraph},
     DefaultTerminal, Frame,
 };
-use tui_checkbox::{symbols, Checkbox};
+use tui_checkbox::{symbols, Checkbox, ThemeSwitcher};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ViewMode {
@@ -36,6 +37,7 @@ struct App {
     checkboxes: Vec<bool>,
     selected: usize,
     mode: ViewMode,
+    themes: ThemeSwitcher,
 }
 
 impl Default for App {
@@ -56,6 +58,7 @@ impl Default for App {
             ],
             selected: 0,
             mode: ViewMode::Interactive,
+            themes: ThemeSwitcher::new(),
         }
     }
 }
@@ -76,6 +79,12 @@ fn run(mut terminal: DefaultTerminal, app: &mut App) -> Result<()> {
         if let Event::Key(key) = event::read()? {
             match key.code {
                 KeyCode::Char('q') | KeyCode::Esc => break,
+                KeyCode::Char('t') => {
+                    app.themes.next();
+                }
+                KeyCode::Char('T') => {
+                    app.themes.prev();
+                }
                 KeyCode::Tab => {
                     app.mode = match app.mode {
                         ViewMode::Interactive => ViewMode::ApiShowcase,
@@ -168,8 +177,11 @@ fn render_api_showcase(frame: &mut Frame, app: &App) {
 fn render_header(frame: &mut Frame, area: Rect, app: &App) {
     let block = Block::bordered()
         .title(match app.mode {
-            ViewMode::Interactive => " tui-checkbox Demo - Interactive Mode ",
-            ViewMode::ApiShowcase => " tui-checkbox Demo - API Showcase ",
+            ViewMode::Interactive => format!(
+                " tui-checkbox Demo - Interactive Mode [{}] ",
+                app.themes.current().name
+            ),
+            ViewMode::ApiShowcase => " tui-checkbox Demo - API Showcase ".to_string(),
         })
         .title_alignment(Alignment::Center)
         .border_style(Style::default().fg(Color::Cyan))
@@ -195,6 +207,8 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
             Span::raw(" Toggle  "),
             Span::styled("Tab", Style::default().fg(Color::Cyan).bold()),
             Span::raw(" API Showcase  "),
+            Span::styled("t/T", Style::default().fg(Color::Cyan).bold()),
+            Span::raw(" Theme  "),
             Span::styled("q", Style::default().fg(Color::Cyan).bold()),
             Span::raw(" Quit"),
         ]),
@@ -227,11 +241,14 @@ fn render_basic_section(frame: &mut Frame, area: Rect, app: &App) {
     .split(inner)[1];
 
     let is_selected = app.selected == 0;
-    let checkbox = Checkbox::new("Enable notifications", app.checkboxes[0]).style(if is_selected {
-        Style::default().bg(Color::DarkGray)
-    } else {
-        Style::default()
-    });
+    // Theme (t/T) styles the symbol/label; the explicit selection bg still wins.
+    let checkbox = Checkbox::new("Enable notifications", app.checkboxes[0])
+        .theme(app.themes.current())
+        .style(if is_selected {
+            Style::default().bg(Color::DarkGray)
+        } else {
+            Style::default()
+        });
 
     frame.render_widget(checkbox, checkbox_area);
 }

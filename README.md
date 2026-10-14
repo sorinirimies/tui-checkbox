@@ -260,6 +260,26 @@ The `symbols` module provides some common checkbox symbols:
 - `symbols::CHECKED_PARENTHESIS_X` - (X)
 - `symbols::UNCHECKED_PARENTHESIS_O` - (O)
 
+## Theming
+
+`tui-checkbox` uses the shared [`tui-nuances`](https://github.com/sorinirimies/tui-nuances) `Theme`,
+so all your TUI components can share one look. Theming is optional; without it the default look is unchanged.
+
+```rust
+use tui_checkbox::{Checkbox, Theme, Themed};
+
+let theme = Theme::by_name("tokyo-night").unwrap_or_default();
+let cb = Checkbox::new("Dark mode", true).theme(&theme); // or .apply_theme(&theme)
+```
+
+Mapping: base = `theme.style()`, block border = `border`, checked symbol = `primary`,
+unchecked symbol = `muted`, label = `foreground`.
+**Precedence:** explicit `style` / `checkbox_style` always win over theme defaults, regardless of call order.
+
+Pass your app's theme with `ThemeProvider` (`Checkbox::new(..).themed(&app_theme)`) or
+`impl From<&AppTheme> for tui_nuances::Theme` and `.theme(&app_theme)`.
+The `checkbox` example cycles themes with `t` / `T`.
+
 ## Development
 
 ### Prerequisites

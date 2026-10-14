@@ -81,6 +81,14 @@ Sleep 0.5s
 Space
 Sleep 0.5s
 
+# Cycle shared themes (tui-nuances)
+Type "t"
+Sleep 0.5s
+Type "t"
+Sleep 0.5s
+Type "T"
+Sleep 0.5s
+
 # Back to top
 Up
 Up

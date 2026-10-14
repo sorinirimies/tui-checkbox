@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## Unreleased
+### ✨ Features
+- feat: shared theming via tui-nuances (`Checkbox::theme`, `Themed`, re-exported `Theme`)
+
 ## 0.5.0 - 2026-10-10
 ### ✨ Features
 - feat: upgrade ratatui to 0.30
