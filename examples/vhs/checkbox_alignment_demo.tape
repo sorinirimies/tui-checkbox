@@ -8,9 +8,11 @@ Set Height 600
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 
-Type "cargo run --example checkbox_alignment"
+Hide
+Type "clear && cargo run --release --example checkbox_alignment"
 Enter
-Sleep 2s
+Sleep 5s
+Show
 
 # Show the demo running
 Sleep 3s

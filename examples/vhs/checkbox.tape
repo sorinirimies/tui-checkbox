@@ -11,9 +11,9 @@ Set FontSize 16
 Set Padding 20
 
 Hide
-Type "cargo run --example checkbox"
+Type "clear && cargo run --release --example checkbox"
 Enter
-Sleep 1.5s
+Sleep 5s
 Show
 Sleep 0.5s
 
@@ -83,11 +83,9 @@ Sleep 0.5s
 
 # Cycle shared themes (tui-nuances)
 Type "t"
-Sleep 0.5s
+Sleep 1s
 Type "t"
-Sleep 0.5s
-Type "T"
-Sleep 0.5s
+Sleep 1.5s
 
 # Back to top
 Up

@@ -8,9 +8,11 @@ Set Height 800
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 
-Type "cargo run --example checkbox_width_wrapping"
+Hide
+Type "clear && cargo run --release --example checkbox_width_wrapping"
 Enter
-Sleep 2s
+Sleep 5s
+Show
 
 # Show the demo running
 Sleep 3s
