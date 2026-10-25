@@ -46,9 +46,9 @@ jobs:
         with:
           components: clippy
       - name: Run clippy action (default features)
-        uses: clechasseur/rs-clippy-check@v4
+        uses: clechasseur/rs-clippy-check@v5
       - name: Run clippy action (all features)
-        uses: clechasseur/rs-clippy-check@v4
+        uses: clechasseur/rs-clippy-check@v5
         with:
           args: --all-targets --all-features -- -D warnings
       - name: Build without default features
