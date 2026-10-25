@@ -18,7 +18,7 @@ ratatui = { version = "0.30", default-features = false }
 tui-nuances = { version = "0.1.7", optional = true }
 
 [features]
-default = []
+default = ["theme"]
 # Shared theming via tui-nuances (`Checkbox::theme`, `Themed`, ...)
 theme = ["dep:tui-nuances"]
 
