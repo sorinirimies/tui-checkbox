@@ -1632,7 +1632,7 @@ dependencies = [
 
 [[package]]
 name = "tui-checkbox"
-version = "0.5.1"
+version = "0.5.2"
 dependencies = [
  "color-eyre",
  "crossterm",
