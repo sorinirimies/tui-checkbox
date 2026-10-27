@@ -15,11 +15,7 @@ exclude = ["fuzz/", ".github/", ".gitea/"]
 
 [dependencies]
 ratatui = { version = "0.30", default-features = false }
-<<<<<<< HEAD
-tui-nuances = { version = "0.1.9", optional = true }
-=======
 tui-nuances = { version = "0.1.10", optional = true }
->>>>>>> 148e414 (chore(deps): bump tui-nuances to 0.1.10)
 
 [features]
 default = ["theme"]
