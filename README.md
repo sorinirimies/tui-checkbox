@@ -6,6 +6,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Release](https://github.com/sorinirimies/tui-checkbox/actions/workflows/release.yml/badge.svg)](https://github.com/sorinirimies/tui-checkbox/actions/workflows/release.yml)
 [![CI](https://github.com/sorinirimies/tui-checkbox/actions/workflows/ci.yml/badge.svg)](https://github.com/sorinirimies/tui-checkbox/actions/workflows/ci.yml)
+[![Audit](https://github.com/sorinirimies/tui-checkbox/actions/workflows/security.yml/badge.svg)](https://github.com/sorinirimies/tui-checkbox/actions/workflows/security.yml)
+[![Fuzz](https://github.com/sorinirimies/tui-checkbox/actions/workflows/fuzz.yml/badge.svg)](https://github.com/sorinirimies/tui-checkbox/actions/workflows/fuzz.yml)
 
 A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui) TUI applications.
 
