@@ -28,3 +28,4 @@ target
 /fuzz/corpus
 /fuzz/artifacts
 /fuzz/target
+.codegraph/
