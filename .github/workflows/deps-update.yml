@@ -1,0 +1,59 @@
+name: Nightly dependency update
+
+# `cargo upgrade` raises the compatible requirements in Cargo.toml, `cargo update`
+# the lockfiles (and fuzz/), then the full gate. Green and a requirement changed ⇒
+# commit, bump the patch version, tag, push and release (crates.io included):
+# users only see the requirements. Only the lockfiles changed ⇒ commit them, no
+# release. Nothing changed ⇒ nothing happens. Gitea updates lockfiles only, so the
+# two hosts never make different versions.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC (Gitea runs at 02:30)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write # dispatch release.yml after a GITHUB_TOKEN tag push
+
+env:
+  CARGO_TERM_COLOR: always
+
+# Never cancel mid-run: a half-finished push would leave main inconsistent.
+concurrency:
+  group: deps-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          token: ${{ secrets.GH_PAT || github.token }}
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt,clippy
+      - uses: Swatinem/rust-cache@v2
+      - uses: hustcer/setup-nu@v3
+        with:
+          version: "0.116.1"
+      - name: Install cargo-edit, git-cliff
+        run: cargo install cargo-edit git-cliff --locked
+      - name: cargo upgrade + update
+        run: nu scripts/ci/deps_update.nu upgrade
+      - name: Anything to do?
+        id: diff
+        run: nu scripts/ci/deps_update.nu changed >> "$GITHUB_OUTPUT"
+      - name: Quality gate
+        if: steps.diff.outputs.changed == 'true'
+        run: nu scripts/ci/quality_gate.nu
+      - name: Commit
+        if: steps.diff.outputs.changed == 'true' && steps.diff.outputs.release != 'true'
+        run: nu scripts/ci/deps_update.nu commit "github-actions[bot]" "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Patch release
+        if: steps.diff.outputs.release == 'true'
+        run: nu scripts/ci/deps_update.nu release "github-actions[bot]" "41898282+github-actions[bot]@users.noreply.github.com"
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+          HAS_PAT: ${{ secrets.GH_PAT != '' }}

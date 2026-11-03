@@ -1,16 +1,17 @@
+//! Example: checkbox width wrapping.
 use std::io;
 
 use ratatui::{
+    Frame, Terminal,
     backend::CrosstermBackend,
     crossterm::{
         event::{self, Event, KeyCode, KeyEventKind},
         execute,
-        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+        terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
     },
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     widgets::{Block, Borders, Paragraph},
-    Frame, Terminal,
 };
 use tui_checkbox::Checkbox;
 
@@ -34,10 +35,11 @@ fn run(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> io::Result<()> 
     loop {
         terminal.draw(render)?;
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press && key.code == KeyCode::Char('q') {
-                return Ok(());
-            }
+        if let Event::Key(key) = event::read()?
+            && key.kind == KeyEventKind::Press
+            && key.code == KeyCode::Char('q')
+        {
+            return Ok(());
         }
     }
 }

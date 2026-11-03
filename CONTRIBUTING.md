@@ -35,7 +35,7 @@ cargo test
 ### Running the Example
 
 ```bash
-just run
+just example checkbox
 # or
 cargo run --example checkbox
 ```

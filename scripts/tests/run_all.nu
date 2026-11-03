@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# ── tui-checkbox · Run All Nushell Tests ────────────────────────────────────
+# ── tui-checkbox · Run All Nushell Tests ────────────────────────────────────────
 #
 # Usage:
 #   nu scripts/tests/run_all.nu          # run every test_*.nu file
@@ -52,6 +52,7 @@ def main [--filter: string = ""] {
         print $"($bold)▶ ($name)($reset)"
         let res = (do { nu $f } | complete)
 
+        # Forward the test file's stdout so the user sees per-test results.
         if ($res.stdout | str trim) != "" {
             print $res.stdout
         }

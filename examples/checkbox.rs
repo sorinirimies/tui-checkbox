@@ -18,15 +18,15 @@
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode};
 use ratatui::{
+    DefaultTerminal, Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::{Line, Span},
     widgets::{Block, Padding, Paragraph},
-    DefaultTerminal, Frame,
 };
 #[cfg(feature = "theme")]
 use tui_checkbox::ThemeSwitcher;
-use tui_checkbox::{symbols, Checkbox};
+use tui_checkbox::{Checkbox, symbols};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ViewMode {
@@ -837,7 +837,7 @@ fn example_unchecked_symbol() {
 /// Example: Using predefined symbols::CHECKED and symbols::UNCHECKED
 #[allow(dead_code)]
 fn example_symbols_checked_unchecked() {
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // Default unicode symbols (☑ and ☐)
     let _checkbox = Checkbox::new("Option", true)
@@ -848,7 +848,7 @@ fn example_symbols_checked_unchecked() {
 /// Example: Using symbols::CHECKED_X and symbols::UNCHECKED_SPACE
 #[allow(dead_code)]
 fn example_symbols_x_space() {
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // ASCII X style: [X] and [ ]
     let _checkbox = Checkbox::new("ASCII style", false)
@@ -859,7 +859,7 @@ fn example_symbols_x_space() {
 /// Example: Using symbols::CHECKED_ASTERISK
 #[allow(dead_code)]
 fn example_symbols_asterisk() {
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // Asterisk style: [*] and [ ]
     let _checkbox = Checkbox::new("Important", true)
@@ -870,7 +870,7 @@ fn example_symbols_asterisk() {
 /// Example: Using symbols::CHECKED_PLUS and symbols::UNCHECKED_MINUS
 #[allow(dead_code)]
 fn example_symbols_plus_minus() {
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // Plus/minus style: [+] and [-]
     let _checkbox = Checkbox::new("Toggle option", true)
@@ -881,7 +881,7 @@ fn example_symbols_plus_minus() {
 /// Example: Using symbols::CHECKED_PARENTHESIS_X and symbols::UNCHECKED_PARENTHESIS_O
 #[allow(dead_code)]
 fn example_symbols_parenthesis() {
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // Parenthesis X/O style: (X) and (O)
     let _checkbox = Checkbox::new("X or O", false)
@@ -894,7 +894,7 @@ fn example_symbols_parenthesis() {
 fn example_combined_styling() {
     use ratatui::style::{Color, Modifier, Style};
     use ratatui::widgets::Block;
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // Complex styled checkbox with all options
     let _checkbox = Checkbox::new("Complete example", true)
@@ -934,7 +934,7 @@ fn example_styled_trait() {
 /// Example: Rendering checkbox with Widget trait
 #[allow(dead_code)]
 fn example_render_widget() {
-    use ratatui::{layout::Rect, Frame};
+    use ratatui::{Frame, layout::Rect};
     use tui_checkbox::Checkbox;
 
     fn render_example(frame: &mut Frame, area: Rect) {
@@ -958,7 +958,7 @@ fn example_render_widget() {
 fn example_method_chaining() {
     use ratatui::style::{Color, Style};
     use ratatui::widgets::Block;
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // All methods return Self for easy chaining
     let _checkbox = Checkbox::default()
@@ -992,7 +992,7 @@ fn example_dynamic_state() {
 /// Example: Using different symbol sets for different contexts
 #[allow(dead_code)]
 fn example_contextual_symbols() {
-    use tui_checkbox::{symbols, Checkbox};
+    use tui_checkbox::{Checkbox, symbols};
 
     // For terminal that supports unicode
     let _checkbox = Checkbox::new("Unicode", true)

@@ -29,3 +29,5 @@ target
 /fuzz/artifacts
 /fuzz/target
 .codegraph/
+/dist/
+/RELEASE_NOTES.md

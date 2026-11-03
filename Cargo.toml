@@ -2,16 +2,17 @@
 name = "tui-checkbox"
 version = "0.5.3"
 authors = ["Sorin Albu-Irimies <sorinirimies@gmail.com>"]
-edition = "2021"
-rust-version = "1.88.0"
+edition = "2024"
+rust-version = "1.88"
 license = "MIT"
 description = "A customizable checkbox widget for Ratatui TUI applications"
 repository = "https://github.com/sorinirimies/tui-checkbox"
+documentation = "https://docs.rs/tui-checkbox"
 homepage = "https://github.com/sorinirimies/tui-checkbox"
 keywords = ["tui", "terminal", "ratatui", "checkbox", "widget"]
 categories = ["command-line-interface"]
 readme = "README.md"
-exclude = ["fuzz/", ".github/", ".gitea/"]
+exclude = [".cargo/", "fuzz/", ".github/", ".gitea/"]
 
 [dependencies]
 ratatui = { version = "0.30", default-features = false }
@@ -39,3 +40,16 @@ path = "examples/checkbox.rs"
 name = "theme_test"
 path = "tests/theme_test.rs"
 required-features = ["theme"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+missing_docs = "warn"
+
+[lints.clippy]
+dbg_macro = "warn"
+todo = "warn"
+unwrap_used = "warn"

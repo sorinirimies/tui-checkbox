@@ -1,3 +1,4 @@
+//! Integration tests: theme test.
 use ratatui::{
     buffer::Buffer,
     layout::Rect,

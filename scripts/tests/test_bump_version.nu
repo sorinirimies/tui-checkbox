@@ -1,114 +1,83 @@
 #!/usr/bin/env nu
-# ── tui-checkbox · test_bump_version.nu ─────────────────────────────────────
-# Tests for scripts/bump_version.nu — bumping versions in Cargo.toml.
+# ── tui-checkbox · test_bump_version.nu ─────────────────────────────────
+# Tests for the pure helpers of scripts/bump_version.nu.
 
 use std/assert
 use runner.nu *
+use ../bump_version.nu [is_semver compare_versions set_workspace_version set_extension_version]
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
-
-# Build a minimal Cargo.toml with the given version.
-def make_cargo [version: string]: nothing -> string {
-    $'[package]
+const CARGO = '[package]
 name = "tui-checkbox"
-version = "($version)"
-edition = "2021"
-license = "MIT"
-description = "A customizable checkbox widget for Ratatui"
+version.workspace = true
 
-[dependencies]
-ratatui = { version = "0.29", default-features = false }
+[workspace.package]
+version      = "0.1.0"
+edition      = "2021"
+
+[workspace.dependencies]
+demo-core    = "=0.3.7"
+serde = { version = "1", features = ["derive"] }
 '
+
+const EXT = 'id = "demo"
+name = "Demo"
+version = "0.1.0"
+schema_version = 1
+
+[language_servers.demo]
+name = "Demo"
+'
+
+def "test bump: semver accepts releases and pre-releases" [] {
+    assert (is_semver "0.1.0")
+    assert (is_semver "12.0.3-rc.1")
+    assert (not (is_semver "v0.1.0"))
+    assert (not (is_semver "0.1"))
+    assert (not (is_semver "0.1.0.4"))
+    assert (not (is_semver ""))
 }
 
-# Read the package version from a Cargo.toml string.
-def read_package_version [cargo_toml: string]: nothing -> string {
-    $cargo_toml
-    | lines
-    | each { |l| $l | str trim }
-    | where { |l| $l | str starts-with 'version' }
-    | first
-    | parse --regex 'version\s*=\s*"(?P<ver>[^"]+)"'
-    | get ver
-    | first
+def "test bump: compare orders by major minor patch" [] {
+    assert equal (compare_versions "0.2.0" "0.1.9") 1
+    assert equal (compare_versions "0.1.9" "0.2.0") (-1)
+    assert equal (compare_versions "1.0.0" "1.0.0") 0
+    assert equal (compare_versions "0.10.0" "0.9.0") 1 "numeric, not lexical"
 }
 
-# Update the package version in a Cargo.toml string.
-def bump_version [cargo_toml: string, new_version: string]: nothing -> string {
-    $cargo_toml | str replace --regex '(?m)^version\s*=\s*"[^"]+"' $'version = "($new_version)"'
+def "test bump: a pre-release sorts below its release" [] {
+    assert equal (compare_versions "1.0.0-rc.1" "1.0.0") (-1)
+    assert equal (compare_versions "1.0.0" "1.0.0-rc.1") 1
+    assert equal (compare_versions "1.0.0-rc.2" "1.0.0-rc.10") (-1)
+    assert equal (compare_versions "1.0.0-alpha" "1.0.0-1") 1
+    assert equal (compare_versions "1.0.0-rc" "1.0.0-rc.1") (-1)
 }
 
-# ── Tests ───────────────────────────────────────────────────────────────────
-
-def "test bump_version: patch bump updates version" [] {
-    let cargo = (make_cargo "1.0.0")
-    let bumped = (bump_version $cargo "1.0.1")
-    let ver = (read_package_version $bumped)
-    assert equal $ver "1.0.1"
+def "test bump: only the workspace.package version changes" [] {
+    let out = (set_workspace_version $CARGO "0.2.0")
+    assert ($out | str contains 'version      = "0.2.0"')
+    assert ($out | str contains 'demo-core    = "=0.3.7"') "dependency pins stay"
+    assert ($out | str contains 'serde = { version = "1"') "dependency versions stay"
+    assert ($out | str contains 'version.workspace = true')
+    assert equal ($out | from toml | get workspace.package.version) "0.2.0"
 }
 
-def "test bump_version: minor bump updates version" [] {
-    let cargo = (make_cargo "1.0.0")
-    let bumped = (bump_version $cargo "1.1.0")
-    let ver = (read_package_version $bumped)
-    assert equal $ver "1.1.0"
+def "test bump: a single crate at the root bumps its package version" [] {
+    let text = "[package]\nname = \"x\"\nversion = \"0.1.0\"\n\n[dependencies]\nserde = { version = \"1\" }\nfoo = \"0.1.0\"\n"
+    let out = set_workspace_version $text "0.2.0"
+    assert equal ($out | from toml | get package.version) "0.2.0"
+    assert equal ($out | from toml | get dependencies.foo) "0.1.0" "dependency versions stay"
 }
 
-def "test bump_version: major bump updates version" [] {
-    let cargo = (make_cargo "1.2.3")
-    let bumped = (bump_version $cargo "2.0.0")
-    let ver = (read_package_version $bumped)
-    assert equal $ver "2.0.0"
+def "test bump: extension version changes once" [] {
+    let out = (set_extension_version $EXT "0.2.0")
+    assert equal ($out | from toml | get version) "0.2.0"
+    assert equal ($out | from toml | get language_servers.demo.name) "Demo"
+    assert equal ($out | lines | where {|l| $l starts-with "version" } | length) 1
 }
 
-def "test bump_version: pre-release version" [] {
-    let cargo = (make_cargo "1.0.0")
-    let bumped = (bump_version $cargo "1.1.0-rc.1")
-    let ver = (read_package_version $bumped)
-    assert equal $ver "1.1.0-rc.1"
+def "test bump: setting the same version is a no-op on content" [] {
+    let out = (set_extension_version $EXT "0.1.0")
+    assert equal ($out | from toml) ($EXT | from toml)
 }
-
-def "test bump_version: idempotent when version unchanged" [] {
-    let cargo = (make_cargo "0.5.0")
-    let bumped = (bump_version $cargo "0.5.0")
-    let ver = (read_package_version $bumped)
-    assert equal $ver "0.5.0"
-}
-
-def "test bump_version: double bump produces correct version" [] {
-    let cargo = (make_cargo "0.1.0")
-    let first = (bump_version $cargo "0.2.0")
-    let second = (bump_version $first "0.3.0")
-    let ver = (read_package_version $second)
-    assert equal $ver "0.3.0"
-}
-
-def "test bump_version: preserves package name" [] {
-    let cargo = (make_cargo "1.0.0")
-    let bumped = (bump_version $cargo "2.0.0")
-    assert ($bumped | str contains 'name = "tui-checkbox"')
-}
-
-def "test bump_version: preserves dependencies" [] {
-    let cargo = (make_cargo "1.0.0")
-    let bumped = (bump_version $cargo "2.0.0")
-    assert ($bumped | str contains '[dependencies]')
-    assert ($bumped | str contains 'ratatui')
-}
-
-def "test bump_version: preserves edition" [] {
-    let cargo = (make_cargo "1.0.0")
-    let bumped = (bump_version $cargo "2.0.0")
-    assert ($bumped | str contains 'edition = "2021"')
-}
-
-def "test bump_version: zero to non-zero" [] {
-    let cargo = (make_cargo "0.0.0")
-    let bumped = (bump_version $cargo "0.1.0")
-    let ver = (read_package_version $bumped)
-    assert equal $ver "0.1.0"
-}
-
-# ── Main ────────────────────────────────────────────────────────────────────
 
 def main [] { run-tests }

@@ -1,5 +1,5 @@
 #!/usr/bin/env nu
-# ── tui-checkbox · test_validate_tag.nu ─────────────────────────────────────
+# ── tui-checkbox · test_validate_tag.nu ─────────────────────────────────────────
 # Tests for scripts/ci/validate_tag.nu — tag validation and version extraction.
 
 use std/assert
@@ -15,9 +15,9 @@ def "test validate_tag: simple release tag" [] {
 }
 
 def "test validate_tag: patch release" [] {
-    let result = (validate "v0.4.1")
-    assert equal $result.tag "v0.4.1"
-    assert equal $result.version "0.4.1"
+    let result = (validate "v0.1.6")
+    assert equal $result.tag "v0.1.6"
+    assert equal $result.version "0.1.6"
 }
 
 def "test validate_tag: zero version" [] {
@@ -75,6 +75,7 @@ def "test validate_tag: rejects bare text" [] {
 }
 
 def "test validate_tag: rejects pre-release suffix" [] {
+    # The CI tag validator only accepts strict vX.Y.Z — no pre-release.
     let failed = (try { validate "v1.0.0-rc.1"; false } catch { true })
     assert $failed
 }
@@ -82,6 +83,19 @@ def "test validate_tag: rejects pre-release suffix" [] {
 def "test validate_tag: rejects alpha suffix" [] {
     let failed = (try { validate "v1.0.0-alpha"; false } catch { true })
     assert $failed
+}
+
+def "test validate_tag: rejects leading zeros in segments are still valid digits" [] {
+    # v01.02.03 is technically valid digits, regex allows it since \d+ matches
+    let result = (validate "v01.02.03")
+    assert equal $result.version "01.02.03"
+}
+
+def "test validate_tag: multiple valid tags produce distinct results" [] {
+    let a = (validate "v1.0.0")
+    let b = (validate "v2.0.0")
+    assert ($a.tag != $b.tag)
+    assert ($a.version != $b.version)
 }
 
 def "test validate_tag: idempotent for same input" [] {

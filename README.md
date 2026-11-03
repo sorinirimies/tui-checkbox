@@ -308,7 +308,7 @@ just install-tools
 
 ```bash
 # Run example
-just run
+just example checkbox
 
 # Run tests
 just test
@@ -320,11 +320,11 @@ just clippy
 # Check all (format, clippy, tests)
 just check-all
 
-# Release check (format, clippy, test, build)
-just release-check
+# Release check (check-all plus a release build and the docs)
+just check-release
 
-# Generate demo GIF (requires VHS)
-just vhs
+# Generate the demo GIFs (requires VHS)
+just vhs-all
 ```
 
 ### Release Workflow
@@ -334,7 +334,7 @@ just vhs
 just release 0.2.0
 
 # Release to Gitea only (if configured)
-just release-gitea 0.2.0
+just release-gitea-starscream 0.2.0
 
 # Release to both GitHub and Gitea
 just release-all 0.2.0
@@ -352,14 +352,14 @@ The release commands automatically:
 If you have a Gitea instance configured:
 
 ```bash
-# Setup Gitea remote
-just setup-gitea git@gitea.yourdomain.com:username/tui-checkbox.git
+# Add the missing remotes (GitHub and Gitea)
+just setup-remotes
 
 # Push to both GitHub and Gitea
 just push-all
 
-# Sync Gitea with GitHub
-just sync-gitea
+# Force-sync Gitea with this checkout
+just sync-gitea-starscream
 
 # Show configured remotes
 just remotes

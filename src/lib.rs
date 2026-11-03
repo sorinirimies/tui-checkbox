@@ -1018,11 +1018,13 @@ mod tests {
         checkbox.render(buffer.area, &mut buffer);
 
         // The buffer should contain the unchecked symbol followed by space and label
-        assert!(buffer
-            .cell(buffer.area.as_position())
-            .unwrap()
-            .symbol()
-            .starts_with('☐'));
+        assert!(
+            buffer
+                .cell(buffer.area.as_position())
+                .unwrap()
+                .symbol()
+                .starts_with('☐')
+        );
     }
 
     #[test]
@@ -1032,11 +1034,13 @@ mod tests {
         checkbox.render(buffer.area, &mut buffer);
 
         // The buffer should contain the checked symbol followed by space and label
-        assert!(buffer
-            .cell(buffer.area.as_position())
-            .unwrap()
-            .symbol()
-            .starts_with('☑'));
+        assert!(
+            buffer
+                .cell(buffer.area.as_position())
+                .unwrap()
+                .symbol()
+                .starts_with('☑')
+        );
     }
 
     #[test]
@@ -1066,11 +1070,13 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
         checkbox.render(buffer.area, &mut buffer);
 
-        assert!(buffer
-            .cell(buffer.area.as_position())
-            .unwrap()
-            .symbol()
-            .starts_with('['));
+        assert!(
+            buffer
+                .cell(buffer.area.as_position())
+                .unwrap()
+                .symbol()
+                .starts_with('[')
+        );
     }
 
     #[test]
@@ -1223,11 +1229,13 @@ mod tests {
         let mut buffer = Buffer::empty(Rect::new(0, 0, 10, 1));
         checkbox.render(buffer.area, &mut buffer);
         // Label renders before checkbox, so first cell is the label.
-        assert!(buffer
-            .cell(buffer.area.as_position())
-            .unwrap()
-            .symbol()
-            .starts_with('H'));
+        assert!(
+            buffer
+                .cell(buffer.area.as_position())
+                .unwrap()
+                .symbol()
+                .starts_with('H')
+        );
     }
 
     #[test]
