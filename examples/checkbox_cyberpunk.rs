@@ -177,7 +177,7 @@ fn render(frame: &mut Frame, app: &App) {
     .areas(area);
     render_header(frame, header, app);
     let [left, right] =
-        Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)]).areas(body);
+        Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).areas(body);
     render_systems(frame, left, app);
     render_gallery(frame, right, app);
     render_footer(frame, footer, app);
@@ -236,7 +236,8 @@ fn render_systems(frame: &mut Frame, area: Rect, app: &App) {
         .focused(app.cursor == 0)
         .cyber(app.cyber(app.all_anim));
 
-    let row_h = all.height() + 1;
+    // One blank row between inline boxes; blocks are tall enough without one.
+    let row_h = if app.block { all.height().max(4) } else { 2 };
     let mut y = inner.y;
     let mut draw = |cb: Checkbox<'_>| {
         if y < inner.bottom() {
@@ -262,9 +263,11 @@ fn render_gallery(frame: &mut Frame, area: Rect, app: &App) {
     let inner = block.inner(area).inner(ratatui::layout::Margin::new(1, 1));
     frame.render_widget(block, area);
 
-    let rows = Layout::vertical([Constraint::Length(5); 6]).split(inner);
+    // Two columns, three rows, checked in a chequerboard.
+    let rows = Layout::vertical([Constraint::Length(5); 3]).split(inner);
     for (i, chamfer) in Chamfer::ALL.into_iter().enumerate() {
-        let cb = Checkbox::new(chamfer.name(), i % 2 == 0).cyber(
+        let cols = Layout::horizontal([Constraint::Fill(1); 2]).split(rows[i / 2]);
+        let cb = Checkbox::new(chamfer.name(), (i / 2 + i % 2) % 2 == 0).cyber(
             Cyber::new()
                 .chamfer(chamfer)
                 .size(CyberSize::Block)
@@ -272,7 +275,7 @@ fn render_gallery(frame: &mut Frame, area: Rect, app: &App) {
                 .flat(app.flat)
                 .palette(pal),
         );
-        frame.render_widget(cb, rows[i]);
+        frame.render_widget(cb, cols[i % 2]);
     }
 }
 
@@ -282,7 +285,7 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
         |k: &'static str| Span::styled(format!(" {k} "), Style::new().fg(pal.ink).bg(pal.primary));
     let txt = |t: &'static str| Span::styled(format!(" {t}  "), Style::new().fg(pal.muted));
     let flag = |on: bool| if on { "on" } else { "off" };
-    let line = Line::from(vec![
+    let keys = Line::from(vec![
         key("↑↓"),
         txt("move"),
         key("SPACE"),
@@ -291,6 +294,10 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
         txt("chamfer"),
         key("P"),
         txt("palette"),
+        key("Q"),
+        txt("quit"),
+    ]);
+    let options = Line::from(vec![
         key("S"),
         Span::styled(
             format!(" size {}  ", if app.block { "block" } else { "inline" }),
@@ -311,11 +318,9 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
             format!(" flat {}  ", flag(app.flat)),
             Style::new().fg(pal.muted),
         ),
-        key("Q"),
-        txt("quit"),
     ]);
     frame.render_widget(
-        Paragraph::new(line),
+        Paragraph::new(vec![keys, options]),
         area.inner(ratatui::layout::Margin::new(1, 0)),
     );
 }

@@ -2,9 +2,9 @@
 
 Output examples/vhs/checkbox_label_position.gif
 
-Set FontSize 14
-Set Width 1200
-Set Height 600
+Set FontSize 20
+Set Width 910
+Set Height 240
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 

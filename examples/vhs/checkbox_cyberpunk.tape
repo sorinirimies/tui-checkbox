@@ -2,9 +2,9 @@
 
 Output examples/vhs/checkbox_cyberpunk.gif
 
-Set FontSize 16
-Set Width 1300
-Set Height 720
+Set FontSize 20
+Set Width 1200
+Set Height 820
 Set Padding 0
 Set Theme "Catppuccin Mocha"
 

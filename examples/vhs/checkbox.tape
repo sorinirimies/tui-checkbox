@@ -5,9 +5,9 @@
 
 Output "examples/checkbox.gif"
 Set Theme "Catppuccin Mocha"
-Set Width 1300
-Set Height 1000
-Set FontSize 16
+Set Width 1020
+Set Height 960
+Set FontSize 18
 Set Padding 20
 
 Hide

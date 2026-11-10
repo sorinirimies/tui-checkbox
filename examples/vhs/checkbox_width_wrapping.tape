@@ -2,9 +2,9 @@
 
 Output examples/vhs/checkbox_width_wrapping.gif
 
-Set FontSize 14
-Set Width 1200
-Set Height 800
+Set FontSize 20
+Set Width 1130
+Set Height 860
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 

@@ -2,9 +2,9 @@
 
 Output examples/vhs/checkbox_alignment_demo.gif
 
-Set FontSize 14
-Set Width 1200
-Set Height 600
+Set FontSize 20
+Set Width 1020
+Set Height 550
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 
