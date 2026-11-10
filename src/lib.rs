@@ -4,11 +4,15 @@
 //!
 //! ## Features
 //!
-//! - ☑️ Simple checkbox with label
+//! - ☑️ Simple checkbox with label, plus an indeterminate (partly checked) state
+//! - 🎯 Focused and disabled states with their own styles
 //! - 🎨 Customizable styling for checkbox and label separately
-//! - 🔤 Custom symbols (unicode, emoji, ASCII)
+//! - 🔤 Custom symbols (unicode, emoji, ASCII) and [`symbols`] presets
+//! - 🌆 A [`cyber`] look: chamfered slabs, hard shadows, readouts, glow, glitch and decrypt
+//! - 📍 Label position, alignment, min/max width and wrapping
+//! - 📏 [`Checkbox::width`] / [`Checkbox::height`] for sizing layouts
+//! - 🌈 Shared theming via `tui-nuances` (`theme` feature, on by default)
 //! - 📦 Optional block wrapper
-//! - ⚡ Zero-cost abstractions
 //!
 //! ## Examples
 //!
@@ -42,6 +46,17 @@
 //!     .checked_symbol("✅ ")
 //!     .unchecked_symbol("⬜ ");
 //! ```
+//!
+//! Cyberpunk look:
+//!
+//! ```no_run
+//! use tui_checkbox::Checkbox;
+//! use tui_checkbox::cyber::{Chamfer, Cyber};
+//!
+//! let checkbox = Checkbox::new("Arm system", true)
+//!     .focused(true)
+//!     .cyber(Cyber::new().chamfer(Chamfer::Diagonal).readout(true).glow(true));
+//! ```
 
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
@@ -51,10 +66,13 @@ use std::borrow::Cow;
 
 use ratatui::buffer::Buffer;
 use ratatui::layout::Rect;
-use ratatui::style::{Style, Styled};
+use ratatui::style::{Modifier, Style, Styled};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Widget};
 
+use crate::cyber::{Cyber, CyberPalette, Glyph, Mark, State};
+
+pub mod cyber;
 pub mod symbols;
 
 #[cfg(feature = "theme")]
@@ -120,12 +138,15 @@ impl VerticalAlignment {
     }
 }
 
-/// Converts a borrowed [`Line`] into an owned `Line<'static>` by cloning span contents.
+/// Converts a borrowed [`Line`] into an owned `Line<'static>`.
+///
+/// The line's own style is baked into every span (span styles still win), so it survives
+/// splitting the line into words and is not lost by rebuilding it from its spans.
 fn to_owned_line(line: &Line<'_>) -> Line<'static> {
     Line::from(
         line.spans
             .iter()
-            .map(|s| Span::styled(s.content.to_string(), s.style))
+            .map(|s| Span::styled(s.content.to_string(), line.style.patch(s.style)))
             .collect::<Vec<_>>(),
     )
 }
@@ -161,6 +182,7 @@ fn to_owned_line(line: &Line<'_>) -> Line<'static> {
 /// Checkbox::new("Accept terms", false).block(Block::bordered().title("Settings"));
 /// ```
 #[expect(clippy::struct_field_names)] // checkbox_style needs to be differentiated from style
+#[expect(clippy::struct_excessive_bools)] // independent builder flags, each set by its own method
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Checkbox<'a> {
     /// The label text displayed next to the checkbox
@@ -191,6 +213,20 @@ pub struct Checkbox<'a> {
     max_width: Option<u16>,
     /// Whether to wrap label text to multiple lines
     wrap_label: bool,
+    /// Whether the checkbox is partly checked (wins over `checked` when drawing)
+    indeterminate: bool,
+    /// Symbol to use when indeterminate
+    indeterminate_symbol: Cow<'a, str>,
+    /// Whether the checkbox has keyboard focus
+    focused: bool,
+    /// Whether the checkbox is disabled
+    disabled: bool,
+    /// Style patched over symbol and label while focused
+    focus_style: Style,
+    /// Style patched over symbol and label while disabled
+    disabled_style: Style,
+    /// Cyberpunk look (replaces the symbols when set)
+    cyber: Option<Cyber>,
     /// Styles derived from a shared theme (lowest precedence)
     #[cfg(feature = "theme")]
     theme: Option<ThemeStyles>,
@@ -202,9 +238,14 @@ pub struct Checkbox<'a> {
 struct ThemeStyles {
     base: Style,
     block: Style,
+    block_focused: Style,
     checked: Style,
     unchecked: Style,
+    indeterminate: Style,
     label: Style,
+    focus: Style,
+    disabled: Style,
+    cyber: CyberPalette,
 }
 
 impl Default for Checkbox<'_> {
@@ -220,6 +261,9 @@ impl Default for Checkbox<'_> {
     /// - Left and top alignment
     /// - No width constraints
     /// - No label wrapping
+    /// - Not indeterminate, focused or disabled (`⊟` as the indeterminate symbol,
+    ///   bold while focused, dim while disabled)
+    /// - The classic look (no [`Cyber`])
     ///
     /// # Examples
     ///
@@ -244,6 +288,13 @@ impl Default for Checkbox<'_> {
             min_width: None,
             max_width: None,
             wrap_label: false,
+            indeterminate: false,
+            indeterminate_symbol: Cow::Borrowed(symbols::INDETERMINATE),
+            focused: false,
+            disabled: false,
+            focus_style: Style::new().add_modifier(Modifier::BOLD),
+            disabled_style: Style::new().add_modifier(Modifier::DIM),
+            cyber: None,
             #[cfg(feature = "theme")]
             theme: None,
         }
@@ -546,14 +597,191 @@ impl<'a> Checkbox<'a> {
         self.wrap_label = wrap;
         self
     }
+
+    /// Marks the checkbox as partly checked (e.g. a "select all" over a partial selection).
+    ///
+    /// An indeterminate checkbox draws [`indeterminate_symbol`](Self::indeterminate_symbol)
+    /// whatever its checked state. The default is `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// let select_all = Checkbox::new("Select all", false).indeterminate(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn indeterminate(mut self, indeterminate: bool) -> Self {
+        self.indeterminate = indeterminate;
+        self
+    }
+
+    /// Sets the symbol to use when the checkbox is indeterminate.
+    ///
+    /// The default is `⊟` ([`symbols::INDETERMINATE`]).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// let checkbox = Checkbox::new("Some", false)
+    ///     .indeterminate(true)
+    ///     .indeterminate_symbol("[~]");
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn indeterminate_symbol<T>(mut self, symbol: T) -> Self
+    where
+        T: Into<Cow<'a, str>>,
+    {
+        self.indeterminate_symbol = symbol.into();
+        self
+    }
+
+    /// Marks the checkbox as focused; [`focus_style`](Self::focus_style) is patched over the
+    /// symbol and the label. The default is `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// let selected = 1;
+    /// let checkbox = Checkbox::new("Option", false).focused(selected == 1);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn focused(mut self, focused: bool) -> Self {
+        self.focused = focused;
+        self
+    }
+
+    /// Marks the checkbox as disabled; [`disabled_style`](Self::disabled_style) is patched
+    /// over the symbol and the label (after the focus style). The default is `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// let checkbox = Checkbox::new("Unavailable", false).disabled(true);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn disabled(mut self, disabled: bool) -> Self {
+        self.disabled = disabled;
+        self
+    }
+
+    /// Sets the style patched over symbol and label while [focused](Self::focused).
+    ///
+    /// The default is bold. With a theme it is patched over the theme's focus colour.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::style::{Color, Style};
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// let checkbox = Checkbox::new("Option", false)
+    ///     .focused(true)
+    ///     .focus_style(Style::default().fg(Color::Yellow));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn focus_style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.focus_style = style.into();
+        self
+    }
+
+    /// Sets the style patched over symbol and label while [disabled](Self::disabled).
+    ///
+    /// The default is dim. With a theme it is patched over the theme's disabled colour.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use ratatui::style::{Color, Style};
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// let checkbox = Checkbox::new("Option", false)
+    ///     .disabled(true)
+    ///     .disabled_style(Style::default().fg(Color::DarkGray));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub fn disabled_style<S: Into<Style>>(mut self, style: S) -> Self {
+        self.disabled_style = style.into();
+        self
+    }
+
+    /// Switches to the cyberpunk look (chamfered slabs, readouts, glitches).
+    ///
+    /// The look replaces the checked/unchecked/indeterminate symbols and
+    /// [`checkbox_style`](Self::checkbox_style); its colours come from the
+    /// [`CyberPalette`] (explicit, else the theme's, else [`CyberPalette::CYBERPUNK`]).
+    /// [`style`](Self::style) and [`label_style`](Self::label_style) still apply.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    /// use tui_checkbox::cyber::{Chamfer, Cyber};
+    ///
+    /// let checkbox = Checkbox::new("Arm system", true)
+    ///     .cyber(Cyber::new().chamfer(Chamfer::Diagonal).readout(true));
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn cyber(mut self, cyber: Cyber) -> Self {
+        self.cyber = Some(cyber);
+        self
+    }
+
+    /// Whether the checkbox is checked.
+    #[must_use]
+    pub const fn is_checked(&self) -> bool {
+        self.checked
+    }
+
+    /// Width in cells the checkbox needs to show its symbol and unwrapped label,
+    /// including the block, for sizing a layout [`Constraint`](ratatui::layout::Constraint).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    ///
+    /// assert_eq!(Checkbox::new("Hi", true).width(), 4); // "☑ Hi"
+    /// ```
+    #[must_use]
+    pub fn width(&self) -> u16 {
+        let (w, _) = self.content_size();
+        w.saturating_add(self.block_margins().0)
+    }
+
+    /// Height in rows the checkbox needs (see [`width`](Self::width)).
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    /// use ratatui::widgets::Block;
+    ///
+    /// assert_eq!(Checkbox::new("Hi", true).height(), 1);
+    /// assert_eq!(Checkbox::new("Hi", true).block(Block::bordered()).height(), 3);
+    /// ```
+    #[must_use]
+    pub fn height(&self) -> u16 {
+        let (_, h) = self.content_size();
+        h.saturating_add(self.block_margins().1)
+    }
 }
 
 #[cfg(feature = "theme")]
 impl Checkbox<'_> {
     /// Styles the checkbox from a shared [`Theme`].
     ///
-    /// Role mapping: base = `theme.style()`, block border = `theme.border_style(false)`,
-    /// checked symbol = `primary`, unchecked symbol = `muted`, label = `foreground`.
+    /// Role mapping: base = `theme.style()`, block border = `theme.border_style(false)`
+    /// (`border_style(true)` while focused), checked symbol = `primary`, unchecked symbol =
+    /// `muted`, indeterminate symbol = `secondary`, label = `foreground`, focus =
+    /// `border_focused` + bold, disabled = `disabled`; the cyber look uses
+    /// [`CyberPalette::from_theme`].
     ///
     /// **Precedence:** explicit [`style`](Self::style),
     /// [`checkbox_style`](Self::checkbox_style) and [`label_style`](Self::label_style)
@@ -575,9 +803,14 @@ impl Checkbox<'_> {
         self.theme = Some(ThemeStyles {
             base: t.style(),
             block: t.border_style(false),
+            block_focused: t.border_style(true),
             checked: Style::default().fg(t.primary),
             unchecked: Style::default().fg(t.muted),
+            indeterminate: Style::default().fg(t.secondary),
             label: Style::default().fg(t.foreground),
+            focus: t.border_style(true),
+            disabled: t.disabled_style(),
+            cyber: CyberPalette::from_theme(&t),
         });
         self
     }
@@ -617,7 +850,12 @@ impl Widget for &Checkbox<'_> {
             let inner_area = block.inner(area);
             #[cfg(feature = "theme")]
             if let Some(t) = &self.theme {
-                block.clone().style(t.block.patch(base)).render(area, buf);
+                let border = if self.focused {
+                    t.block_focused
+                } else {
+                    t.block
+                };
+                block.clone().style(base.patch(border)).render(area, buf);
             } else {
                 block.render(area, buf);
             }
@@ -631,6 +869,54 @@ impl Widget for &Checkbox<'_> {
     }
 }
 
+/// What a checkbox is laid out from: its symbol and its (wrapped) label lines.
+struct Parts {
+    glyph: Glyph,
+    label: Vec<Line<'static>>,
+}
+
+impl Parts {
+    fn label_width(&self) -> u16 {
+        self.label
+            .iter()
+            .map(|l| l.width() as u16)
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Cells between symbol and label (none for an empty label).
+    fn gap(&self) -> u16 {
+        u16::from(self.label_width() > 0)
+    }
+
+    fn glyph_height(&self) -> u16 {
+        self.glyph.lines.len() as u16
+    }
+
+    fn label_height(&self) -> u16 {
+        self.label.len() as u16
+    }
+}
+
+/// Renders `lines` from `(x, y)` downwards, clipped to `area`.
+fn draw_lines(buf: &mut Buffer, area: Rect, x: u16, y: u16, lines: &[Line<'_>]) {
+    if x >= area.right() {
+        return;
+    }
+    for (i, line) in lines.iter().enumerate() {
+        let ly = y.saturating_add(i as u16);
+        if ly >= area.bottom() {
+            break;
+        }
+        line.render(Rect::new(x, ly, area.right() - x, 1), buf);
+    }
+}
+
+/// Display width of `text` in cells.
+fn text_width(text: &str) -> usize {
+    Span::raw(text).width()
+}
+
 impl Checkbox<'_> {
     /// Theme base style patched by the explicit style.
     fn base_style(&self) -> Style {
@@ -641,302 +927,282 @@ impl Checkbox<'_> {
         themed.patch(self.style)
     }
 
+    const fn state(&self) -> State {
+        State {
+            mark: if self.indeterminate {
+                Mark::Mixed
+            } else if self.checked {
+                Mark::Checked
+            } else {
+                Mark::Unchecked
+            },
+            focused: self.focused,
+            disabled: self.disabled,
+        }
+    }
+
+    /// Theme styles for `(symbol, label, focus, disabled)`; empty without a theme.
+    // Without the `theme` feature there is no theme to read.
+    #[cfg_attr(not(feature = "theme"), expect(clippy::unused_self))]
+    fn theme_styles(&self, mark: Mark) -> (Style, Style, Style, Style) {
+        #[cfg(feature = "theme")]
+        if let Some(t) = self.theme {
+            let symbol = match mark {
+                Mark::Checked => t.checked,
+                Mark::Unchecked => t.unchecked,
+                Mark::Mixed => t.indeterminate,
+            };
+            return (symbol, t.label, t.focus, t.disabled);
+        }
+        #[cfg(not(feature = "theme"))]
+        let _ = mark;
+        Default::default()
+    }
+
+    /// The cyber palette: explicit, else from the theme, else the default.
+    // Without the `theme` feature there is no theme to read.
+    #[cfg_attr(not(feature = "theme"), expect(clippy::unused_self))]
+    fn cyber_palette(&self, cyber: &Cyber) -> CyberPalette {
+        if let Some(p) = cyber.explicit_palette() {
+            return p;
+        }
+        #[cfg(feature = "theme")]
+        if let Some(t) = self.theme {
+            return t.cyber;
+        }
+        CyberPalette::CYBERPUNK
+    }
+
+    /// Patches the focus and disabled styles over `style` as the state asks.
+    fn decorate(&self, mut style: Style, focus: Style, disabled: Style) -> Style {
+        if self.focused {
+            style = style.patch(focus.patch(self.focus_style));
+        }
+        if self.disabled {
+            style = style.patch(disabled.patch(self.disabled_style));
+        }
+        style
+    }
+
+    /// Symbol and label lines; with wrapping on, the label wraps to fit `available` columns.
+    fn parts(&self, available: Option<u16>) -> Parts {
+        let base = self.base_style();
+        let state = self.state();
+        let (sym_theme, label_theme, focus, disabled) = self.theme_styles(state.mark);
+        let cyber = self.cyber.map(|c| (c, self.cyber_palette(&c)));
+
+        let (glyph, label) = if let Some((c, pal)) = &cyber {
+            let style = base
+                .patch(cyber::label_style(pal, state))
+                .patch(self.label_style);
+            let style = self.decorate(style, focus, disabled);
+            let label = to_owned_line(&self.label.clone().patch_style(style));
+            (
+                cyber::glyph(c, pal, state),
+                cyber::transform_label(c, pal, label),
+            )
+        } else {
+            let symbol = match state.mark {
+                Mark::Checked => &self.checked_symbol,
+                Mark::Unchecked => &self.unchecked_symbol,
+                Mark::Mixed => &self.indeterminate_symbol,
+            };
+            let style = base.patch(sym_theme).patch(self.checkbox_style);
+            let span = Span::styled(symbol.to_string(), self.decorate(style, focus, disabled));
+            let glyph = Glyph {
+                width: span.width() as u16,
+                lines: vec![Line::from(span)],
+                label_row: 0,
+            };
+            // The explicit base style wins over the theme's label colour.
+            let style = base
+                .patch(label_theme)
+                .patch(self.style)
+                .patch(self.label_style);
+            let style = self.decorate(style, focus, disabled);
+            (glyph, to_owned_line(&self.label.clone().patch_style(style)))
+        };
+
+        // The cyber bar pads each label line by one cell on both sides.
+        let pad = if cyber.is_some() { 2 } else { 0 };
+        let wrap_width = available.map(|w| {
+            let w = match self.label_position {
+                LabelPosition::Left | LabelPosition::Right => w.saturating_sub(glyph.width + 1),
+                LabelPosition::Top | LabelPosition::Bottom => w,
+            };
+            w.saturating_sub(pad)
+        });
+        let mut label = match wrap_width {
+            Some(w) if self.wrap_label => Self::wrap_text(&label, w),
+            _ => vec![label],
+        };
+        if let Some((c, pal)) = &cyber {
+            // The bar goes around the label only; the readout follows it.
+            cyber::bar(c, pal, state, &mut label);
+            if let Some(readout) = cyber::readout(c, pal, state) {
+                match (c.is_block(), label.last_mut()) {
+                    (false, Some(last)) => {
+                        last.spans.push(Span::raw(" "));
+                        last.spans.push(readout);
+                    }
+                    _ => label.push(Line::from(vec![Span::raw(" "), readout])),
+                }
+            }
+        }
+        Parts { glyph, label }
+    }
+
+    /// Unwrapped content size, without the block.
+    fn content_size(&self) -> (u16, u16) {
+        let p = self.parts(None);
+        match self.label_position {
+            LabelPosition::Left | LabelPosition::Right => (
+                p.glyph
+                    .width
+                    .saturating_add(p.gap())
+                    .saturating_add(p.label_width()),
+                p.glyph_height()
+                    .max(p.glyph.label_row.saturating_add(p.label_height())),
+            ),
+            LabelPosition::Top | LabelPosition::Bottom => (
+                p.glyph.width.max(p.label_width()),
+                p.glyph_height().saturating_add(p.label_height()),
+            ),
+        }
+    }
+
+    /// Columns and rows the block takes around the content.
+    fn block_margins(&self) -> (u16, u16) {
+        self.block.as_ref().map_or((0, 0), |b| {
+            let outer = Rect::new(0, 0, 1000, 1000);
+            let inner = b.inner(outer);
+            (outer.width - inner.width, outer.height - inner.height)
+        })
+    }
+
     fn render_checkbox(&self, area: Rect, buf: &mut Buffer) {
         if area.is_empty() {
             return;
         }
-
-        // Determine which symbol to use based on checked state
-        let symbol = if self.checked {
-            &self.checked_symbol
-        } else {
-            &self.unchecked_symbol
-        };
-
-        // Calculate the combined styles
-        let base = self.base_style();
-        #[cfg(feature = "theme")]
-        let (sym_theme, label_theme) = self
-            .theme
-            .map_or((Style::default(), Style::default()), |t| {
-                (if self.checked { t.checked } else { t.unchecked }, t.label)
-            });
-        #[cfg(not(feature = "theme"))]
-        let (sym_theme, label_theme) = (Style::default(), Style::default());
-        let checkbox_style = base.patch(sym_theme).patch(self.checkbox_style);
-        let label_style = base.patch(label_theme).patch(self.label_style);
-
-        // Apply width constraints
-        let mut render_area = area;
-        if let Some(min_width) = self.min_width {
-            render_area.width = render_area.width.max(min_width);
-        }
+        let mut area = area;
         if let Some(max_width) = self.max_width {
-            render_area.width = render_area.width.min(max_width);
+            area.width = area.width.min(max_width);
         }
+        let p = self.parts(Some(area.width));
+        let min_width = self.min_width.unwrap_or(0);
+        let (gw, lw) = (p.glyph.width, p.label_width());
 
-        // Ensure render_area doesn't exceed original area
-        render_area.width = render_area.width.min(area.width);
-
-        // Create checkbox and label spans
-        let checkbox_span = Span::styled(symbol.as_ref(), checkbox_style);
-        let styled_label = self.label.clone().patch_style(label_style);
-        let owned_label = to_owned_line(&styled_label);
-
-        // Calculate dimensions based on label position
         match self.label_position {
             LabelPosition::Right | LabelPosition::Left => {
-                self.render_horizontal(render_area, buf, checkbox_span, owned_label);
+                let gap = p.gap();
+                let content_w = gw.saturating_add(gap).saturating_add(lw);
+                // `min_width` widens the box the alignment places; content starts at its left.
+                let box_w = content_w.max(min_width);
+                let content_h = p
+                    .glyph_height()
+                    .max(p.glyph.label_row.saturating_add(p.label_height()));
+                let x = area.x + self.horizontal_alignment.offset(area.width, box_w);
+                let y = area.y + self.vertical_alignment.offset(area.height, content_h);
+                let (gx, lx) = if self.label_position == LabelPosition::Right {
+                    (x, x.saturating_add(gw.saturating_add(gap)))
+                } else {
+                    (x.saturating_add(lw.saturating_add(gap)), x)
+                };
+                draw_lines(buf, area, gx, y, &p.glyph.lines);
+                draw_lines(buf, area, lx, y.saturating_add(p.glyph.label_row), &p.label);
             }
             LabelPosition::Top | LabelPosition::Bottom => {
-                self.render_vertical(render_area, buf, checkbox_span, owned_label);
-            }
-        }
-    }
-
-    fn render_horizontal(
-        &self,
-        area: Rect,
-        buf: &mut Buffer,
-        checkbox_span: Span<'_>,
-        label: Line<'static>,
-    ) {
-        if area.height == 0 || area.width == 0 {
-            return;
-        }
-
-        let checkbox_width = checkbox_span.width() as u16;
-        let space_width = 1u16;
-
-        // Handle wrapping if enabled
-        let label_lines = if self.wrap_label {
-            let available_width = area.width.saturating_sub(checkbox_width + space_width);
-            Self::wrap_text(&label, available_width)
-        } else {
-            vec![label]
-        };
-
-        let total_width = if label_lines.is_empty() {
-            checkbox_width
-        } else {
-            checkbox_width
-                + space_width
-                + label_lines
-                    .iter()
-                    .map(|l| l.width() as u16)
-                    .max()
-                    .unwrap_or(0)
-        };
-
-        // Calculate horizontal offset based on alignment
-        let x_offset = self.horizontal_alignment.offset(area.width, total_width);
-
-        // Calculate vertical offset based on alignment
-        let content_height = label_lines.len() as u16;
-        let y_offset = self.vertical_alignment.offset(area.height, content_height);
-
-        // Render based on label position
-        match self.label_position {
-            LabelPosition::Right if x_offset < area.width && y_offset < area.height => {
-                // Render checkbox first, then label
-                let checkbox_area = Rect {
-                    x: area.x + x_offset,
-                    y: area.y + y_offset,
-                    width: checkbox_width.min(area.width.saturating_sub(x_offset)),
-                    height: 1,
+                let box_w = gw.max(lw).max(min_width);
+                let content_h = p.glyph_height().saturating_add(p.label_height());
+                let x = area.x + self.horizontal_alignment.offset(area.width, box_w);
+                let y = area.y + self.vertical_alignment.offset(area.height, content_h);
+                let gx = x.saturating_add(self.horizontal_alignment.offset(box_w, gw));
+                let (gy, ly) = if self.label_position == LabelPosition::Top {
+                    (y.saturating_add(p.label_height()), y)
+                } else {
+                    (y, y.saturating_add(p.glyph_height()))
                 };
-                Line::from(vec![checkbox_span]).render(checkbox_area, buf);
-
-                // Render label lines
-                for (i, label_line) in label_lines.iter().enumerate() {
-                    let label_x = area.x + x_offset + checkbox_width + space_width;
-                    let label_y = area.y + y_offset + i as u16;
-                    if label_y < area.y + area.height && label_x < area.x + area.width {
-                        let label_area = Rect {
-                            x: label_x,
-                            y: label_y,
-                            width: area
-                                .width
-                                .saturating_sub(x_offset + checkbox_width + space_width),
-                            height: 1,
-                        };
-                        label_line.clone().render(label_area, buf);
-                    }
+                draw_lines(buf, area, gx, gy, &p.glyph.lines);
+                for (i, line) in p.label.iter().enumerate() {
+                    let lx = x.saturating_add(
+                        self.horizontal_alignment.offset(box_w, line.width() as u16),
+                    );
+                    draw_lines(
+                        buf,
+                        area,
+                        lx,
+                        ly.saturating_add(i as u16),
+                        std::slice::from_ref(line),
+                    );
                 }
             }
-            LabelPosition::Left => {
-                // Render label first, then checkbox
-                let max_label_width = label_lines
-                    .iter()
-                    .map(|l| l.width() as u16)
-                    .max()
-                    .unwrap_or(0);
-
-                // Render label lines
-                for (i, label_line) in label_lines.iter().enumerate() {
-                    let label_y = area.y + y_offset + i as u16;
-                    if label_y < area.y + area.height && x_offset < area.width {
-                        let label_area = Rect {
-                            x: area.x + x_offset,
-                            y: label_y,
-                            width: max_label_width.min(area.width.saturating_sub(x_offset)),
-                            height: 1,
-                        };
-                        label_line.clone().render(label_area, buf);
-                    }
-                }
-
-                // Render checkbox
-                let checkbox_x = area.x + x_offset + max_label_width + space_width;
-                if checkbox_x < area.x + area.width && y_offset < area.height {
-                    let checkbox_area = Rect {
-                        x: checkbox_x,
-                        y: area.y + y_offset,
-                        width: checkbox_width.min(
-                            area.width
-                                .saturating_sub(x_offset + max_label_width + space_width),
-                        ),
-                        height: 1,
-                    };
-                    Line::from(vec![checkbox_span]).render(checkbox_area, buf);
-                }
-            }
-            _ => {}
         }
     }
 
-    fn render_vertical(
-        &self,
-        area: Rect,
-        buf: &mut Buffer,
-        checkbox_span: Span<'_>,
-        label: Line<'static>,
-    ) {
-        if area.height == 0 || area.width == 0 {
-            return;
-        }
-
-        // Handle wrapping if enabled
-        let label_lines = if self.wrap_label {
-            Self::wrap_text(&label, area.width)
-        } else {
-            vec![label]
-        };
-
-        let checkbox_width = checkbox_span.width() as u16;
-        let label_height = label_lines.len() as u16;
-        let total_height = 1 + label_height; // checkbox + label lines
-
-        // Calculate vertical offset
-        let y_offset = self.vertical_alignment.offset(area.height, total_height);
-
-        match self.label_position {
-            LabelPosition::Top => {
-                // Render label first
-                for (i, label_line) in label_lines.iter().enumerate() {
-                    let label_y = area.y + y_offset + i as u16;
-                    if label_y < area.y + area.height {
-                        let x_offset = self
-                            .horizontal_alignment
-                            .offset(area.width, label_line.width() as u16);
-                        let label_area = Rect {
-                            x: area.x + x_offset,
-                            y: label_y,
-                            width: area.width.saturating_sub(x_offset),
-                            height: 1,
-                        };
-                        label_line.clone().render(label_area, buf);
-                    }
-                }
-
-                // Render checkbox
-                let checkbox_y = area.y + y_offset + label_height;
-                if checkbox_y < area.y + area.height {
-                    let x_offset = self.horizontal_alignment.offset(area.width, checkbox_width);
-                    let checkbox_area = Rect {
-                        x: area.x + x_offset,
-                        y: checkbox_y,
-                        width: checkbox_width.min(area.width.saturating_sub(x_offset)),
-                        height: 1,
-                    };
-                    Line::from(vec![checkbox_span]).render(checkbox_area, buf);
-                }
-            }
-            LabelPosition::Bottom => {
-                // Render checkbox first
-                let x_offset = self.horizontal_alignment.offset(area.width, checkbox_width);
-                let checkbox_area = Rect {
-                    x: area.x + x_offset,
-                    y: area.y + y_offset,
-                    width: checkbox_width.min(area.width.saturating_sub(x_offset)),
-                    height: 1,
-                };
-                Line::from(vec![checkbox_span]).render(checkbox_area, buf);
-
-                // Render label
-                for (i, label_line) in label_lines.iter().enumerate() {
-                    let label_y = area.y + y_offset + 1 + i as u16;
-                    if label_y < area.y + area.height {
-                        let x_offset = self
-                            .horizontal_alignment
-                            .offset(area.width, label_line.width() as u16);
-                        let label_area = Rect {
-                            x: area.x + x_offset,
-                            y: label_y,
-                            width: area.width.saturating_sub(x_offset),
-                            height: 1,
-                        };
-                        label_line.clone().render(label_area, buf);
-                    }
-                }
-            }
-            _ => {}
-        }
-    }
-
+    /// Word-wraps `line` to `max_width` display cells.
+    ///
+    /// Words wider than the line are broken between characters; widths are display widths,
+    /// so wide (CJK, emoji) characters count as two cells. A `max_width` of zero returns the
+    /// line unwrapped.
     fn wrap_text(line: &Line<'_>, max_width: u16) -> Vec<Line<'static>> {
         if max_width == 0 {
             return vec![to_owned_line(line)];
         }
-
-        let mut result = Vec::new();
-        let mut current_line = Vec::new();
-        let mut current_width = 0u16;
+        let max = usize::from(max_width);
+        let mut lines: Vec<Vec<Span<'static>>> = vec![Vec::new()];
+        let mut width = 0usize;
+        let push = |lines: &mut Vec<Vec<Span<'static>>>, text: &str, style: Style| {
+            if !text.is_empty()
+                && let Some(last) = lines.last_mut()
+            {
+                last.push(Span::styled(text.to_string(), style));
+            }
+        };
 
         for span in &line.spans {
-            let text = span.content.as_ref();
-            let words: Vec<&str> = text.split(' ').collect();
-
-            for (i, word) in words.iter().enumerate() {
-                let word_width = word.chars().count() as u16;
-                let space_width = u16::from(i > 0 || !current_line.is_empty());
-
-                if current_width + space_width + word_width > max_width && !current_line.is_empty()
-                {
-                    result.push(Line::from(current_line.clone()));
-                    current_line.clear();
-                    current_width = 0;
+            let style = line.style.patch(span.style);
+            for (i, word) in span.content.split(' ').enumerate() {
+                let word_width = text_width(word);
+                let sep = usize::from(i > 0 && width > 0);
+                if width > 0 && width + sep + word_width > max {
+                    lines.push(Vec::new());
+                    width = 0;
+                } else if sep == 1 {
+                    push(&mut lines, " ", style);
+                    width += 1;
                 }
-
-                if i > 0 {
-                    current_line.push(Span::styled(String::from(" "), span.style));
-                    current_width += 1;
+                if word_width <= max.saturating_sub(width) {
+                    push(&mut lines, word, style);
+                    width += word_width;
+                    continue;
                 }
-
-                current_line.push(Span::styled(String::from(*word), span.style));
-                current_width += word_width;
+                // Longer than a whole line: break between characters.
+                let mut chunk = String::new();
+                for ch in word.chars() {
+                    let ch_width = text_width(ch.encode_utf8(&mut [0; 4]));
+                    if width > 0 && width + ch_width > max {
+                        push(&mut lines, &chunk, style);
+                        chunk.clear();
+                        lines.push(Vec::new());
+                        width = 0;
+                    }
+                    chunk.push(ch);
+                    width += ch_width;
+                }
+                push(&mut lines, &chunk, style);
             }
         }
 
-        if !current_line.is_empty() {
-            result.push(Line::from(current_line));
-        }
-
+        let result: Vec<Line<'static>> = lines
+            .into_iter()
+            .filter(|spans| !spans.is_empty())
+            .map(Line::from)
+            .collect();
         if result.is_empty() {
-            result.push(to_owned_line(line));
+            vec![to_owned_line(line)]
+        } else {
+            result
         }
-
-        result
     }
 }
 
@@ -1306,6 +1572,189 @@ mod tests {
             }
         }
     }
+
+    /// Text of row `y` in `buf`, skipping the cells a wide character covers.
+    fn row(buf: &Buffer, y: u16) -> String {
+        let mut s = String::new();
+        let mut skip = 0;
+        for x in buf.area.left()..buf.area.right() {
+            if skip > 0 {
+                skip -= 1;
+                continue;
+            }
+            let sym = buf[(x, y)].symbol();
+            skip = text_width(sym).saturating_sub(1);
+            s.push_str(sym);
+        }
+        s.trim_end().to_string()
+    }
+
+    fn draw(cb: &Checkbox<'_>, w: u16, h: u16) -> Buffer {
+        let mut buf = Buffer::empty(Rect::new(0, 0, w, h));
+        cb.render(buf.area, &mut buf);
+        buf
+    }
+
+    #[test]
+    fn regression_label_style_is_applied() {
+        // `to_owned_line` used to drop the line style, so `label_style` never showed.
+        let cb = Checkbox::new("Hi", true).label_style(Style::default().fg(Color::Red));
+        let buf = draw(&cb, 10, 1);
+        assert_eq!(buf[(2, 0)].fg, Color::Red);
+        assert_eq!(buf[(3, 0)].fg, Color::Red);
+        // A span's own style still wins over `label_style`.
+        let cb = Checkbox::new("Hi".blue(), true).label_style(Style::default().fg(Color::Red));
+        assert_eq!(draw(&cb, 10, 1)[(2, 0)].fg, Color::Blue);
+    }
+
+    #[test]
+    fn regression_min_width_widens_the_aligned_box() {
+        // `min_width` used to be clamped back to the area width, so it did nothing.
+        let cb = Checkbox::new("ab", true).horizontal_alignment(HorizontalAlignment::Center);
+        assert_eq!(row(&draw(&cb, 20, 1), 0), "        ☑ ab");
+        let cb = cb.min_width(10);
+        assert_eq!(row(&draw(&cb, 20, 1), 0), "     ☑ ab");
+        // Larger than the area: the box fills the area, nothing panics.
+        let cb = Checkbox::new("ab", true).min_width(50);
+        assert_eq!(row(&draw(&cb, 10, 1), 0), "☑ ab");
+    }
+
+    #[test]
+    fn regression_wrap_counts_display_width() {
+        // Wide characters are two cells; counting chars overflowed the line.
+        let wrapped = Checkbox::wrap_text(&Line::from("界界 界界"), 5);
+        assert_eq!(wrapped.len(), 2);
+        assert!(wrapped.iter().all(|l| l.width() <= 5));
+    }
+
+    #[test]
+    fn regression_huge_min_width_does_not_overflow() {
+        // Found by the render_cyber fuzz target: offsets inside a huge box overflowed u16.
+        for position in [LabelPosition::Right, LabelPosition::Top] {
+            let cb = Checkbox::new("x", true)
+                .min_width(u16::MAX)
+                .label_position(position)
+                .horizontal_alignment(HorizontalAlignment::Center);
+            let _ = draw(&cb, 10, 3);
+        }
+    }
+
+    #[test]
+    fn regression_wide_char_in_one_cell_line_does_not_underflow() {
+        let wrapped = Checkbox::wrap_text(&Line::from("界 a"), 1);
+        let texts: Vec<String> = wrapped.iter().map(ToString::to_string).collect();
+        assert_eq!(texts, ["界", "a"]);
+    }
+
+    #[test]
+    fn wrap_breaks_overlong_words_without_leading_spaces() {
+        let wrapped = Checkbox::wrap_text(&Line::from("abcdefgh ij"), 3);
+        let texts: Vec<String> = wrapped.iter().map(ToString::to_string).collect();
+        assert_eq!(texts, ["abc", "def", "gh", "ij"]);
+    }
+
+    #[test]
+    fn wrap_keeps_span_styles() {
+        let line = Line::from(vec!["red ".red(), "blue".blue()]);
+        let wrapped = Checkbox::wrap_text(&line, 4);
+        assert_eq!(wrapped.len(), 2);
+        assert_eq!(wrapped[1].spans[0].style.fg, Some(Color::Blue));
+    }
+
+    #[test]
+    fn indeterminate_wins_over_checked() {
+        for checked in [true, false] {
+            let cb = Checkbox::new("x", checked).indeterminate(true);
+            assert_eq!(row(&draw(&cb, 10, 1), 0), "⊟ x");
+        }
+        let cb = Checkbox::new("x", true)
+            .indeterminate(true)
+            .indeterminate_symbol(symbols::INDETERMINATE_TILDE);
+        assert_eq!(row(&draw(&cb, 10, 1), 0), "[~] x");
+    }
+
+    #[test]
+    fn focused_and_disabled_patch_their_styles() {
+        let buf = draw(&Checkbox::new("x", true).focused(true), 10, 1);
+        assert!(buf[(0, 0)].modifier.contains(Modifier::BOLD));
+        assert!(buf[(2, 0)].modifier.contains(Modifier::BOLD));
+        let buf = draw(&Checkbox::new("x", true).disabled(true), 10, 1);
+        assert!(buf[(0, 0)].modifier.contains(Modifier::DIM));
+        let cb = Checkbox::new("x", true)
+            .focused(true)
+            .disabled(true)
+            .focus_style(Style::default().fg(Color::Yellow))
+            .disabled_style(Style::default().fg(Color::DarkGray));
+        // Disabled is patched last.
+        assert_eq!(draw(&cb, 10, 1)[(2, 0)].fg, Color::DarkGray);
+        // Neither flag set: no change.
+        let buf = draw(&Checkbox::new("x", true), 10, 1);
+        assert!(buf[(0, 0)].modifier.is_empty());
+    }
+
+    #[test]
+    fn empty_label_has_no_gap() {
+        let cb = Checkbox::new("", true).horizontal_alignment(HorizontalAlignment::Right);
+        assert_eq!(cb.width(), 1);
+        assert_eq!(row(&draw(&cb, 4, 1), 0), "   ☑");
+    }
+
+    #[test]
+    fn width_and_height_cover_symbol_label_and_block() {
+        assert_eq!(
+            (
+                Checkbox::new("Hi", true).width(),
+                Checkbox::new("Hi", true).height()
+            ),
+            (4, 1)
+        );
+        let cb = Checkbox::new("Hi", true).label_position(LabelPosition::Top);
+        assert_eq!((cb.width(), cb.height()), (2, 2));
+        let cb = Checkbox::new("Hi", true).block(Block::bordered());
+        assert_eq!((cb.width(), cb.height()), (6, 3));
+        let cb = Checkbox::new("Hi", true).cyber(Cyber::new());
+        assert_eq!((cb.width(), cb.height()), (8, 1));
+        let cb = Checkbox::new("Hi", true).cyber(
+            Cyber::new()
+                .size(cyber::CyberSize::Block)
+                .shadow(true)
+                .readout(true),
+        );
+        // 6-cell slab with shadow, gap, ` //ONLINE`; label on row 1, readout on row 2.
+        assert_eq!((cb.width(), cb.height()), (16, 4));
+    }
+
+    #[test]
+    fn cyber_renders_slab_label_and_readout() {
+        let cb = Checkbox::new("Arm", true).cyber(Cyber::new().readout(true));
+        let buf = draw(&cb, 30, 1);
+        assert_eq!(row(&buf, 0), "▐✓◤  ARM  //ONLINE");
+        let pal = CyberPalette::CYBERPUNK;
+        assert_eq!(buf[(1, 0)].bg, pal.primary);
+        assert_eq!(buf[(1, 0)].fg, pal.ink);
+        assert_eq!(buf[(0, 0)].fg, pal.primary);
+        assert_eq!(buf[(5, 0)].fg, pal.text);
+    }
+
+    #[test]
+    fn cyber_block_label_left_sits_on_the_middle_row() {
+        let cb = Checkbox::new("Arm", true)
+            .label_position(LabelPosition::Left)
+            .cyber(Cyber::new().size(cyber::CyberSize::Block));
+        let buf = draw(&cb, 12, 3);
+        assert_eq!(row(&buf, 1), " ARM    ✓");
+        assert_eq!(row(&buf, 2), "          ◤");
+    }
+
+    #[test]
+    fn cyber_palette_explicit_wins_and_label_style_applies() {
+        let cb = Checkbox::new("a", true)
+            .label_style(Style::default().fg(Color::Green))
+            .cyber(Cyber::new().palette(CyberPalette::NEON));
+        let buf = draw(&cb, 10, 1);
+        assert_eq!(buf[(1, 0)].bg, CyberPalette::NEON.primary);
+        assert_eq!(buf[(5, 0)].fg, Color::Green);
+    }
 }
 
 #[cfg(all(test, feature = "theme"))]
@@ -1362,5 +1811,57 @@ mod theme_tests {
                     .apply_theme(&t),
             );
         }
+    }
+
+    #[test]
+    fn theme_maps_indeterminate_focus_and_disabled() {
+        let t = Theme::dracula();
+        let buf = render(Checkbox::new("x", false).indeterminate(true).theme(&t));
+        assert_eq!(buf[(0, 0)].fg, t.secondary);
+        let buf = render(Checkbox::new("x", false).focused(true).theme(&t));
+        assert_eq!(buf[(2, 0)].fg, t.border_focused);
+        let buf = render(Checkbox::new("x", false).disabled(true).theme(&t));
+        assert_eq!(buf[(2, 0)].fg, t.disabled);
+        // Explicit focus style wins over the theme.
+        let buf = render(
+            Checkbox::new("x", false)
+                .focused(true)
+                .focus_style(Style::default().fg(Color::Red))
+                .theme(&t),
+        );
+        assert_eq!(buf[(2, 0)].fg, Color::Red);
+    }
+
+    #[test]
+    fn focused_block_uses_the_focused_border() {
+        let t = Theme::nord();
+        let buf = render(
+            Checkbox::new("x", true)
+                .block(Block::bordered())
+                .focused(true)
+                .theme(&t),
+        );
+        assert_eq!(buf[(0, 0)].fg, t.border_focused);
+        let buf = render(Checkbox::new("x", true).block(Block::bordered()).theme(&t));
+        assert_eq!(buf[(0, 0)].fg, t.border);
+    }
+
+    #[test]
+    fn cyber_takes_its_palette_from_the_theme_unless_explicit() {
+        let t = Theme::nord();
+        let buf = render(
+            Checkbox::new("x", true)
+                .cyber(cyber::Cyber::new())
+                .theme(&t),
+        );
+        assert_eq!(buf[(1, 0)].bg, t.primary);
+        let pal = cyber::CyberPalette::SYNTHWAVE;
+        let buf = render(
+            Checkbox::new("x", true)
+                .theme(&t)
+                .cyber(cyber::Cyber::new().palette(pal)),
+        );
+        assert_eq!(buf[(1, 0)].bg, pal.primary);
+        assert_eq!(cyber::CyberPalette::from_theme(&t).text, t.foreground);
     }
 }

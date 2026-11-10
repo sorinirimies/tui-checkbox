@@ -45,3 +45,9 @@ name = "render_tiny"
 path = "fuzz_targets/render_tiny.rs"
 test = false
 doc = false
+
+[[bin]]
+name = "render_cyber"
+path = "fuzz_targets/render_cyber.rs"
+test = false
+doc = false

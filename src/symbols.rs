@@ -68,3 +68,32 @@ pub const CHECKED_PARENTHESIS_X: &str = "(X)";
 ///     .unchecked_symbol(symbols::UNCHECKED_PARENTHESIS_O);
 /// ```
 pub const UNCHECKED_PARENTHESIS_O: &str = "(O)";
+
+/// Unchecked checkbox symbol with a space in parenthesis, the pair of
+/// [`CHECKED_PARENTHESIS_X`]
+pub const UNCHECKED_PARENTHESIS_SPACE: &str = "( )";
+
+/// Indeterminate (partly checked) checkbox symbol (⊟), the default for
+/// [`Checkbox::indeterminate`](crate::Checkbox::indeterminate)
+pub const INDETERMINATE: &str = "⊟";
+
+/// Indeterminate checkbox symbol in the ASCII family (`[~]`)
+pub const INDETERMINATE_TILDE: &str = "[~]";
+
+/// Round checked symbol (◉)
+pub const ROUND_CHECKED: &str = "◉";
+
+/// Round unchecked symbol (○)
+pub const ROUND_UNCHECKED: &str = "○";
+
+/// Square checked symbol (■)
+pub const SQUARE_CHECKED: &str = "■";
+
+/// Square unchecked symbol (□)
+pub const SQUARE_UNCHECKED: &str = "□";
+
+/// Check mark (✓), e.g. with [`CROSS`] for done / failed lists
+pub const CHECK: &str = "✓";
+
+/// Cross mark (✗)
+pub const CROSS: &str = "✗";
