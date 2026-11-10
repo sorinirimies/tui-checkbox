@@ -17,6 +17,7 @@ struct In {
     palette: u8,
     block: bool,
     shadow: bool,
+    flat: bool,
     uppercase: bool,
     readout: bool,
     glow: bool,
@@ -36,6 +37,7 @@ fuzz_target!(|i: In| {
         .chamfer(Chamfer::ALL[usize::from(i.chamfer) % Chamfer::ALL.len()])
         .size(if i.block { CyberSize::Block } else { CyberSize::Inline })
         .shadow(i.shadow)
+        .flat(i.flat)
         .uppercase(i.uppercase)
         .readout(i.readout)
         .glow(i.glow)

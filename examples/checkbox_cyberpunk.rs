@@ -1,7 +1,7 @@
 //! Example: the cyberpunk look — chamfered slabs, readouts, glow, shadows, glitch and decrypt.
 //!
 //! Keys: `↑/↓` or `k/j` move, `Space` toggles (with a glitch + decrypt), `c` cycles the
-//! chamfer, `p` the palette, `s` the size, `h` the shadow, `g` the glow, `q` quits.
+//! chamfer, `p` the palette, `s` the size, `h` the shadow, `g` the glow, `f` flat, `q` quits.
 use std::io;
 use std::time::{Duration, Instant};
 
@@ -38,6 +38,7 @@ struct App {
     block: bool,
     shadow: bool,
     glow: bool,
+    flat: bool,
     /// Animation of the "all systems" box.
     all_anim: Option<u16>,
 }
@@ -64,6 +65,7 @@ impl App {
             block: false,
             shadow: false,
             glow: true,
+            flat: false,
             all_anim: None,
         }
     }
@@ -82,6 +84,7 @@ impl App {
             })
             .shadow(self.shadow)
             .glow(self.glow)
+            .flat(self.flat)
             .readout(true)
             .palette(self.pal());
         if let Some(f) = anim {
@@ -148,6 +151,7 @@ fn run(terminal: &mut DefaultTerminal) -> io::Result<()> {
                 KeyCode::Char('s') => app.block = !app.block,
                 KeyCode::Char('h') => app.shadow = !app.shadow,
                 KeyCode::Char('g') => app.glow = !app.glow,
+                KeyCode::Char('f') => app.flat = !app.flat,
                 _ => {}
             }
         }
@@ -265,6 +269,7 @@ fn render_gallery(frame: &mut Frame, area: Rect, app: &App) {
                 .chamfer(chamfer)
                 .size(CyberSize::Block)
                 .shadow(true)
+                .flat(app.flat)
                 .palette(pal),
         );
         frame.render_widget(cb, rows[i]);
@@ -299,6 +304,11 @@ fn render_footer(frame: &mut Frame, area: Rect, app: &App) {
         key("G"),
         Span::styled(
             format!(" glow {}  ", flag(app.glow)),
+            Style::new().fg(pal.muted),
+        ),
+        key("F"),
+        Span::styled(
+            format!(" flat {}  ", flag(app.flat)),
             Style::new().fg(pal.muted),
         ),
         key("Q"),

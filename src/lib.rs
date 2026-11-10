@@ -1737,6 +1737,26 @@ mod tests {
     }
 
     #[test]
+    fn cyber_flat_focus_has_no_fill_and_keeps_the_layout() {
+        let flat = Checkbox::new("Arm", true)
+            .focused(true)
+            .cyber(Cyber::new().flat(true).shadow(true).glow(true));
+        let solid = Checkbox::new("Arm", true).focused(true).cyber(Cyber::new());
+        assert_eq!(
+            (flat.width(), flat.height()),
+            (solid.width(), solid.height())
+        );
+        let buf = draw(&flat, 20, 2);
+        assert_eq!(row(&buf, 0), "▐✓◤  ARM◤");
+        assert_eq!(row(&buf, 1), "");
+        let pal = CyberPalette::CYBERPUNK;
+        // The slab is still filled; the label is not.
+        assert_eq!(buf[(1, 0)].bg, pal.primary);
+        assert_eq!(buf[(5, 0)].fg, pal.primary);
+        assert_ne!(buf[(5, 0)].bg, pal.primary);
+    }
+
+    #[test]
     fn cyber_block_label_left_sits_on_the_middle_row() {
         let cb = Checkbox::new("Arm", true)
             .label_position(LabelPosition::Left)

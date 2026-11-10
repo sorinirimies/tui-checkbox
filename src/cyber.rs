@@ -220,12 +220,14 @@ impl Default for CyberPalette {
 /// Configuration of the cyber look; pass it to [`Checkbox::cyber`](crate::Checkbox::cyber).
 ///
 /// Defaults: [`Chamfer::Slab`], [`CyberSize::Inline`], uppercase label, no shadow, no readout,
-/// no glow, no effects, palette from the theme (or [`CyberPalette::CYBERPUNK`]).
+/// no glow, not flat, no effects, palette from the theme (or [`CyberPalette::CYBERPUNK`]).
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+#[expect(clippy::struct_excessive_bools)] // independent builder flags, each set by its own method
 pub struct Cyber {
     chamfer: Chamfer,
     size: CyberSize,
     shadow: bool,
+    flat: bool,
     uppercase: bool,
     readout: Option<[&'static str; 3]>,
     glow: bool,
@@ -251,6 +253,7 @@ impl Cyber {
             chamfer: Chamfer::Slab,
             size: CyberSize::Inline,
             shadow: false,
+            flat: false,
             uppercase: true,
             readout: None,
             glow: false,
@@ -280,6 +283,17 @@ impl Cyber {
     #[must_use]
     pub const fn shadow(mut self, shadow: bool) -> Self {
         self.shadow = shadow;
+        self
+    }
+
+    /// Flat look: keeps the cut-corner slab but drops everything painted behind it.
+    ///
+    /// No shadow, no glow and no filled focus bar; focus colours the label in the primary
+    /// colour and keeps the `◤` tip. Wins over [`Cyber::shadow`] and [`Cyber::glow`] in
+    /// any call order, and the layout is the same width as the non-flat look.
+    #[must_use]
+    pub const fn flat(mut self, flat: bool) -> Self {
+        self.flat = flat;
         self
     }
 
@@ -483,7 +497,7 @@ pub(crate) fn glyph(cfg: &Cyber, pal: &CyberPalette, state: State) -> Glyph {
         CyberSize::Inline => 3,
         CyberSize::Block => 5,
     };
-    if cfg.shadow {
+    if cfg.shadow && !cfg.flat {
         let shadow = Style::new().fg(if state.disabled {
             pal.surface
         } else {
@@ -694,11 +708,24 @@ pub(crate) fn readout(cfg: &Cyber, pal: &CyberPalette, state: State) -> Option<S
 ///
 /// Focused: the label is inverted (ink on primary) and ends in a `◤` tip. Glowing (checked or
 /// indeterminate with [`Cyber::glow`]): the label sits on a dark tint of the fill, also with a
-/// tip. The padding is always there, so neither bar shifts the layout when it appears.
+/// tip. Flat ([`Cyber::flat`]): no fill; focus only colours the label and tip. The padding is
+/// always there, so neither bar shifts the layout when it appears.
 pub(crate) fn bar(cfg: &Cyber, pal: &CyberPalette, state: State, lines: &mut [Line<'static>]) {
     let focused = state.focused && !state.disabled;
-    let lit = cfg.glow && !state.disabled && state.mark != Mark::Unchecked;
+    let lit = cfg.glow && !cfg.flat && !state.disabled && state.mark != Mark::Unchecked;
     let tint = mix(pal.ink, fill(pal, state).0, 0.22);
+    if focused && cfg.flat {
+        // Flat focus: no fill, the label and its tip take the primary colour.
+        for line in lines {
+            for span in &mut line.spans {
+                span.style = span.style.fg(pal.primary);
+            }
+            line.spans.insert(0, Span::raw(" "));
+            line.spans
+                .push(Span::styled("◤", Style::new().fg(pal.primary)));
+        }
+        return;
+    }
     let paint = if focused {
         Some((pal.primary, Some(pal.ink)))
     } else if lit && tint != pal.ink {
@@ -930,6 +957,43 @@ mod tests {
         };
         let s = readout(&custom, &pal, disabled).unwrap();
         assert_eq!((s.content.as_ref(), s.style.fg), ("ON", Some(pal.muted)));
+    }
+
+    #[test]
+    fn flat_drops_shadow_glow_and_bar_fill() {
+        let pal = CyberPalette::CYBERPUNK;
+        let cfg = Cyber::new().shadow(true).glow(true).flat(true);
+        // No shadow: same size as without it, in either call order.
+        let g = glyph(&cfg, &pal, st(Mark::Checked));
+        assert_eq!((g.width, g.lines.len()), (3, 1));
+        let g = glyph(
+            &Cyber::new().flat(true).shadow(true),
+            &pal,
+            st(Mark::Checked),
+        );
+        assert_eq!(g.width, 3);
+        // The slab keeps its cut corner.
+        assert_eq!(text(&g.lines[0]), "▐✓◤");
+        // No glow.
+        let mut lines = vec![Line::from("X")];
+        bar(&cfg, &pal, st(Mark::Checked), &mut lines);
+        assert_eq!(text(&lines[0]), " X ");
+        assert!(lines[0].spans.iter().all(|s| s.style.bg.is_none()));
+        // Focus: primary label and tip, no fill, same width.
+        let focused = State {
+            focused: true,
+            ..st(Mark::Checked)
+        };
+        let mut lines = vec![Line::from("X")];
+        bar(&cfg, &pal, focused, &mut lines);
+        assert_eq!(text(&lines[0]), " X◤");
+        assert!(lines[0].spans.iter().all(|s| s.style.bg.is_none()));
+        assert_eq!(lines[0].spans[1].style.fg, Some(pal.primary));
+        assert_eq!(lines[0].spans[2].style.fg, Some(pal.primary));
+        // Flat block: no shadow row or column.
+        let block = Cyber::new().size(CyberSize::Block).shadow(true).flat(true);
+        let g = glyph(&block, &pal, st(Mark::Checked));
+        assert_eq!((g.width, g.lines.len()), (5, 3));
     }
 
     #[test]

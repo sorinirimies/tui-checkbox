@@ -63,6 +63,14 @@ Down
 Space
 Sleep 1.5s
 
+# Flat: cut corners, no shadow, no fills behind labels
+Type "f"
+Sleep 1.5s
+Type "s"
+Sleep 1.5s
+Up
+Sleep 1.5s
+
 Hide
 Type "q"
 Sleep 0.3s

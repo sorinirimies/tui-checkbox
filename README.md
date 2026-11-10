@@ -95,6 +95,7 @@ shape language of the dodai-ui cyberpunk design system:
 ▐ ◤  ARM SYSTEM  //OFFLINE     unchecked: a dark slab
 ▐−◤  ARM SYSTEM  //PARTIAL     indeterminate: the secondary colour
 ◢✓◤  ARM SYSTEM◤               focused: the label turns into a bar with a cut tip
+▐✓◤  ARM SYSTEM◤               flat + focused: same cut corners, nothing painted behind the label
 
 ◢   ◣                          CyberSize::Block (5×3), Tab chamfer,
   ✓  ▌  ARM SYSTEM              with a hard offset shadow
@@ -112,7 +113,7 @@ let checkbox = Checkbox::new("Arm system", true)
         Cyber::new()
             .chamfer(Chamfer::Diagonal)    // Slab, Diagonal, AntiDiagonal, Tab, Bracket, Sharp
             .size(CyberSize::Block)        // Inline (1 row, default) or Block (3 rows)
-            .shadow(true)                  // hard offset shadow
+            .shadow(true)                  // hard offset shadow (or .flat(true) for none)
             .readout(true)                 // //ONLINE · //OFFLINE · //PARTIAL
             .glow(true)                    // tinted bar behind a checked label
             .palette(CyberPalette::NEON),  // CYBERPUNK (default), NEON, ARASAKA, SYNTHWAVE
@@ -124,6 +125,7 @@ let checkbox = Checkbox::new("Arm system", true)
 | `chamfer` | Which corners are cut: `Slab` (bottom-right), `Diagonal`, `AntiDiagonal`, `Tab` (top), `Bracket` (left), `Sharp` |
 | `size` | `Inline` (`▐✓◤`, one row) or `Block` (5×3 slab, label on the middle row) |
 | `shadow` | Hard offset shadow below (and right of) the slab; adds a row and a column |
+| `flat` | Cut-corner slab only: no shadow, no glow, no filled focus bar (focus colours the label instead). Wins over `shadow` / `glow` in any order |
 | `uppercase` | Uppercases the label (default `true`) |
 | `readout` / `readout_texts` | A status readout after the label (block: on the row below) |
 | `glow` | Tints the label background while checked or partly checked (RGB palettes) |
@@ -141,7 +143,7 @@ cargo run --example checkbox_cyberpunk
 ```
 
 Keys: `↑/↓` move, `Space` toggle (glitch + decrypt), `c` chamfer, `p` palette, `s` size,
-`h` shadow, `g` glow, `q` quit.
+`h` shadow, `g` glow, `f` flat, `q` quit.
 
 ## Label Positioning
 
