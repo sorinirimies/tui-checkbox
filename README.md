@@ -16,9 +16,12 @@ A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui)
 
 ## Features
 
-- ☑️ Simple checkbox with label
+- ☑️ Simple checkbox with label, plus an **indeterminate** (partly checked) state
+- 🎯 **Focused** and **disabled** states with their own styles
 - 🎨 Customizable styling for checkbox and label separately
-- 🔤 Custom symbols (unicode, emoji, ASCII)
+- 🔤 Custom symbols (unicode, emoji, ASCII) and presets in `symbols`
+- 🌆 **Cyberpunk look** - chamfered slabs, hard shadows, readouts, glow, glitch & decrypt - **optional**
+- 📐 `width()` / `height()` for sizing layout constraints
 - 📦 Block wrapper - **optional**
 - 📍 Label positioning (right, left, top, bottom) - **optional**
 - ↔️ Horizontal & vertical alignment - **optional**
@@ -33,7 +36,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-tui-checkbox = "0.4.3"
+tui-checkbox = "0.5"
 ratatui = "0.30"
 ```
 
@@ -70,7 +73,75 @@ use ratatui::widgets::Block;
 
 let checkbox = Checkbox::new("Accept terms", false)
     .block(Block::bordered().title("Settings"));
+
+// States: partly checked, focused, disabled
+let select_all = Checkbox::new("Select all", false).indeterminate(true);
+let current = Checkbox::new("Option", true).focused(true);
+let locked = Checkbox::new("Unavailable", false).disabled(true);
+
+// Size a layout to fit
+let constraint = ratatui::layout::Constraint::Length(checkbox.width());
 ```
+
+## Cyberpunk Look
+
+![Cyberpunk Demo](examples/vhs/checkbox_cyberpunk.gif)
+
+`Checkbox::cyber` swaps the symbol for a filled slab with cut ("chamfered") corners, in the
+shape language of the dodai-ui cyberpunk design system:
+
+```text
+▐✓◤  ARM SYSTEM  //ONLINE      checked: a neon slab, bottom-right corner cut
+▐ ◤  ARM SYSTEM  //OFFLINE     unchecked: a dark slab
+▐−◤  ARM SYSTEM  //PARTIAL     indeterminate: the secondary colour
+◢✓◤  ARM SYSTEM◤               focused: the label turns into a bar with a cut tip
+
+◢   ◣                          CyberSize::Block (5×3), Tab chamfer,
+  ✓  ▌  ARM SYSTEM              with a hard offset shadow
+     ▌  //ONLINE
+ ▀▀▀▀▘
+```
+
+```rust
+use tui_checkbox::Checkbox;
+use tui_checkbox::cyber::{Chamfer, Cyber, CyberPalette, CyberSize};
+
+let checkbox = Checkbox::new("Arm system", true)
+    .focused(true)
+    .cyber(
+        Cyber::new()
+            .chamfer(Chamfer::Diagonal)    // Slab, Diagonal, AntiDiagonal, Tab, Bracket, Sharp
+            .size(CyberSize::Block)        // Inline (1 row, default) or Block (3 rows)
+            .shadow(true)                  // hard offset shadow
+            .readout(true)                 // //ONLINE · //OFFLINE · //PARTIAL
+            .glow(true)                    // tinted bar behind a checked label
+            .palette(CyberPalette::NEON),  // CYBERPUNK (default), NEON, ARASAKA, SYNTHWAVE
+    );
+```
+
+| Option | What it does |
+|---|---|
+| `chamfer` | Which corners are cut: `Slab` (bottom-right), `Diagonal`, `AntiDiagonal`, `Tab` (top), `Bracket` (left), `Sharp` |
+| `size` | `Inline` (`▐✓◤`, one row) or `Block` (5×3 slab, label on the middle row) |
+| `shadow` | Hard offset shadow below (and right of) the slab; adds a row and a column |
+| `uppercase` | Uppercases the label (default `true`) |
+| `readout` / `readout_texts` | A status readout after the label (block: on the row below) |
+| `glow` | Tints the label background while checked or partly checked (RGB palettes) |
+| `glitch(Some(frame))` | Glitches the mark and two label cells for this frame; deterministic |
+| `decrypt(Some(percent))` | Scrambles the label and reveals it left to right as `percent` goes 0 → 100 |
+| `palette` | Colours; otherwise the theme's (`CyberPalette::from_theme`), else `CYBERPUNK` |
+
+`glitch` and `decrypt` are pure functions of the frame / percent you pass, so the app owns
+the animation: after a toggle, count a frame up on every tick for a few hundred milliseconds
+and pass it in (see `examples/checkbox_cyberpunk.rs`). `style` and `label_style` still apply;
+`checkbox_style` and the symbols are replaced by the slab.
+
+```bash
+cargo run --example checkbox_cyberpunk
+```
+
+Keys: `↑/↓` move, `Space` toggle (glitch + decrypt), `c` chamfer, `p` palette, `s` size,
+`h` shadow, `g` glow, `q` quit.
 
 ## Label Positioning
 
@@ -126,6 +197,10 @@ Checkbox::new("Bottom", false)
 ### Width Constraints & Text Wrapping (Optional)
 
 Set minimum and maximum width constraints, and enable text wrapping when needed.
+
+`min_width` widens the box that alignment places, so a centered checkbox with a short label
+lines up with wider ones. Wrapping uses display widths (wide CJK and emoji characters count as
+two cells) and breaks words longer than a line.
 
 ```rust
 // Minimum width (optional)
@@ -225,8 +300,10 @@ The widget supports multiple styling options:
 - **`style()`**: Sets the base style for the entire widget
 - **`checkbox_style()`**: Sets the style specifically for the checkbox symbol
 - **`label_style()`**: Sets the style specifically for the label text
+- **`focus_style()`**: Patched over symbol and label while `focused(true)` (default: bold)
+- **`disabled_style()`**: Patched over symbol and label while `disabled(true)` (default: dim)
 
-Styles are applied in order: base style, then specific styles override it.
+Styles are applied in order: base style, then specific styles, then focus, then disabled.
 
 ## Custom Symbols
 
@@ -262,18 +339,25 @@ The `symbols` module provides some common checkbox symbols:
 - `symbols::UNCHECKED_MINUS` - [-]
 - `symbols::CHECKED_PARENTHESIS_X` - (X)
 - `symbols::UNCHECKED_PARENTHESIS_O` - (O)
+- `symbols::UNCHECKED_PARENTHESIS_SPACE` - ( )
+- `symbols::INDETERMINATE` - ⊟ (the default indeterminate symbol)
+- `symbols::INDETERMINATE_TILDE` - [~]
+- `symbols::ROUND_CHECKED` / `symbols::ROUND_UNCHECKED` - ◉ / ○
+- `symbols::SQUARE_CHECKED` / `symbols::SQUARE_UNCHECKED` - ■ / □
+- `symbols::CHECK` / `symbols::CROSS` - ✓ / ✗
 
 ## Theming
 
 `tui-checkbox` uses the shared [`tui-nuances`](https://github.com/sorinirimies/tui-nuances) `Theme`,
-so all your TUI components can share one look. Theming is optional and **off by default** (no extra dependency). Enable the `theme` feature:
+so all your TUI components can share one look. The `theme` feature is **on by default**; to drop
+the `tui-nuances` dependency, turn default features off:
 
 ```toml
 [dependencies]
-tui-checkbox = { version = "0.5", features = ["theme"] }
+tui-checkbox = { version = "0.5", default-features = false }
 ```
 
-Without it the default look is unchanged.
+Without a theme the default look is unchanged.
 
 ```rust
 use tui_checkbox::{Checkbox, Theme, Themed};
@@ -282,9 +366,12 @@ let theme = Theme::by_name("tokyo-night").unwrap_or_default();
 let cb = Checkbox::new("Dark mode", true).theme(&theme); // or .apply_theme(&theme)
 ```
 
-Mapping: base = `theme.style()`, block border = `border`, checked symbol = `primary`,
-unchecked symbol = `muted`, label = `foreground`.
-**Precedence:** explicit `style` / `checkbox_style` always win over theme defaults, regardless of call order.
+Mapping: base = `theme.style()`, block border = `border` (`border_focused` while focused),
+checked symbol = `primary`, unchecked symbol = `muted`, indeterminate symbol = `secondary`,
+label = `foreground`, focus = `border_focused` + bold, disabled = `disabled`. The cyber look
+derives its palette from the theme (`CyberPalette::from_theme`) unless one is set.
+**Precedence:** explicit `style` / `checkbox_style` / `label_style` / `focus_style` /
+`disabled_style` always win over theme defaults, regardless of call order.
 
 Pass your app's theme with `ThemeProvider` (`Checkbox::new(..).themed(&app_theme)`) or
 `impl From<&AppTheme> for tui_nuances::Theme` and `.theme(&app_theme)`.
@@ -294,7 +381,7 @@ The `checkbox` example cycles themes with `t` / `T` when run with `--features th
 
 ### Prerequisites
 
-- Rust 1.74.0 or later
+- Rust 1.88 or later
 - [just](https://github.com/casey/just) - command runner (optional)
 - [git-cliff](https://github.com/orhun/git-cliff) - changelog generator (optional)
 
