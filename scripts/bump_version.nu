@@ -148,8 +148,12 @@ def main [
         print $"(ansi red)Error:(ansi reset) tag ($tag) already exists on origin."
         exit 1
     }
-    if (^git status --porcelain | str trim | is-not-empty) {
+    # Tracked changes only: an untracked file (a tool's scratch output) is not
+    # part of the bump commit, and the release job runs after a commit anyway.
+    let tracked = (^git status --porcelain --untracked-files=no | str trim)
+    if ($tracked | is-not-empty) {
         print $"(ansi red)Error:(ansi reset) the working tree is dirty — commit or stash first."
+        print $tracked
         exit 1
     }
     if not $yes {
