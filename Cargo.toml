@@ -16,7 +16,7 @@ exclude = [".cargo/", "fuzz/", ".github/", ".gitea/"]
 
 [dependencies]
 ratatui = { version = "0.30", default-features = false }
-tui-nuances = { version = "0.1.10", optional = true }
+tui-nuances = { version = "0.1.11", optional = true }
 
 [features]
 default = ["theme"]

@@ -34,9 +34,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.11.1"
+version = "1.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ff2a8126fff0f8c839080d619675a585e61720bb12d2baceae45769fd66f155"
+checksum = "33ef9e3e8154a45c7a95cff4c1299702106ad94062d7bb85fdc5d3a5afd91d45"
 dependencies = [
  "find-msvc-tools",
  "jobserver",
@@ -443,9 +443,9 @@ dependencies = [
 
 [[package]]
 name = "tui-nuances"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8c4a0e7ec99c630f79977ab650c1a0ef6cc8fccc6077ebee36fc8aa0d329724f"
+checksum = "71a55e1ee7052a2409c91486005043da038bf44f72978a69747986dc64ca6068"
 dependencies = [
  "ratatui",
 ]
