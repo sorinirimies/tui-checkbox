@@ -44,6 +44,8 @@
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
 
+use crate::design::big_mark;
+
 /// Which corners of the slab are cut.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum Chamfer {
@@ -684,7 +686,7 @@ fn add_shadow(lines: &mut Vec<Line<'static>>, width: u16, colour: Color) {
 }
 
 /// Quarter-cell glyph that removes the corner `i` (`[tl, tr, bl, br]`) from a cell.
-const CUT: [&str; 4] = ["▟", "▙", "▜", "▛"];
+pub(crate) const CUT: [&str; 4] = ["▟", "▙", "▜", "▛"];
 
 /// A filled 5×3 slab; a cut corner is a quarter cell taken out of its corner cell.
 pub(crate) fn slab(
@@ -701,14 +703,20 @@ pub(crate) fn slab(
             Span::styled(" ", body)
         }
     };
+    let big = big_mark(mark, 3);
+    let inner = |row: usize| match &big {
+        Some(b) => Span::styled(b[row].clone(), mark_style),
+        None if row == 1 => Span::styled(format!(" {mark} "), mark_style),
+        None => Span::styled("   ", body),
+    };
     vec![
-        Line::from(vec![corner(0), Span::styled("   ", body), corner(1)]),
+        Line::from(vec![corner(0), inner(0), corner(1)]),
         Line::from(vec![
-            Span::styled("  ", body),
-            Span::styled(mark.to_string(), mark_style),
-            Span::styled("  ", body),
+            Span::styled(" ", body),
+            inner(1),
+            Span::styled(" ", body),
         ]),
-        Line::from(vec![corner(2), Span::styled("   ", body), corner(3)]),
+        Line::from(vec![corner(2), inner(2), corner(3)]),
     ]
 }
 
@@ -967,8 +975,9 @@ mod tests {
             st(Mark::Checked),
         );
         assert_eq!((g.width, g.lines.len(), g.label_row), (5, 3, 1));
-        assert_eq!(text(&g.lines[1]), "  ✓  ");
-        assert_eq!(text(&g.lines[2]), "    ▛");
+        // The check is drawn across the three centre cells in quadrant pixels.
+        assert_eq!(text(&g.lines[1]), " ▖▟▘ ");
+        assert_eq!(text(&g.lines[2]).chars().last(), Some('▛'));
         for l in &g.lines {
             assert_eq!(l.width(), 5);
         }
@@ -984,11 +993,17 @@ mod tests {
         let on = glyph(&cfg, &pal, st(Mark::Checked));
         assert_eq!(text(&off.lines[0]), "▟    ");
         assert_eq!(text(&off.lines[2]), "    ▛");
-        // Same shape as the checked slab, only the colour differs.
-        assert_eq!(
-            off.lines.iter().map(text).collect::<Vec<_>>()[0],
-            text(&on.lines[0])
-        );
+        // Same cuts as the checked slab (its centre differs by the mark), only the colour differs.
+        let corners = |g: &Glyph| {
+            g.lines
+                .iter()
+                .map(|l| {
+                    let t = text(l);
+                    (t.chars().next(), t.chars().last())
+                })
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(corners(&off), corners(&on));
         assert_eq!(off.lines[1].spans[0].style.bg, Some(pal.surface));
     }
 
@@ -1070,8 +1085,8 @@ mod tests {
         assert_eq!(text(&off.lines[2]), "╰───╯");
         assert_eq!(off.lines[0].spans[0].style.fg, Some(pal.muted));
         let on = glyph(&cfg, &pal, st(Mark::Checked));
-        assert_eq!(text(&on.lines[0]), "▟   ▙");
-        assert_eq!(text(&on.lines[2]), "▜   ▛");
+        assert_eq!(text(&on.lines[0]), "▟  ▄▙");
+        assert_eq!(text(&on.lines[2]).chars().next(), Some('▜'));
         // Mixed is filled with the primary colour too.
         let mixed = glyph(&cfg, &pal, st(Mark::Mixed));
         assert_eq!(mixed.lines[0].spans[1].style.bg, Some(pal.primary));
@@ -1092,12 +1107,17 @@ mod tests {
         let pal = CyberPalette::DODAI;
         let cfg = Cyber::for_design(Design::Dodai).size(CyberSize::Block);
         let on = glyph(&cfg, &pal, st(Mark::Checked));
-        assert_eq!(text(&on.lines[0]), "▗▄▄▄▖");
-        assert_eq!(text(&on.lines[2]), "▝▀▀▀▘");
-        let bg = |i: usize| on.lines[1].spans[i].style.bg;
-        assert_eq!(bg(0), Some(pal.primary));
-        assert_eq!(bg(4), Some(pal.secondary));
-        assert_ne!(bg(0), bg(2));
+        // Rounded corners, and the check drawn across the centre in quadrant pixels.
+        assert_eq!(text(&on.lines[0]).chars().next(), Some('▟'));
+        assert_eq!(text(&on.lines[2]).chars().last(), Some('▛'));
+        assert_eq!(text(&on.lines[1]), "▌▖▟▘▌");
+        // Two samples per cell: the ramp runs from the primary (left half of cell 0) to the
+        // secondary (right half of cell 4), smoothly in between.
+        let sty = |i: usize| on.lines[1].spans[i].style;
+        assert_eq!(sty(0).fg, Some(pal.primary));
+        assert_eq!(sty(4).bg, Some(pal.secondary));
+        assert_ne!(sty(0).fg, sty(0).bg);
+        assert_ne!(sty(0).bg, sty(4).fg);
         // Off: flat glass.
         let off = glyph(&cfg, &pal, st(Mark::Unchecked));
         assert_eq!(
@@ -1112,7 +1132,7 @@ mod tests {
         let cfg = Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block);
         let on = glyph(&cfg, &pal, st(Mark::Checked));
         assert_eq!(text(&on.lines[0]), "▛▀▀▀▜");
-        assert_eq!(text(&on.lines[1]), "▌ ✓ ▐");
+        assert_eq!(text(&on.lines[1]), "▌▄▐▘▐");
         assert_eq!(text(&on.lines[2]), "▙▄▄▄▟");
         assert_eq!(on.lines[0].spans[0].style.fg, Some(pal.muted));
         assert_eq!(on.lines[0].spans[0].style.bg, Some(pal.primary));

@@ -111,6 +111,7 @@ let chunky = Checkbox::new("Notifications", true).cyber(
 Focus lays a tonal state layer under the label (Material, Dodai) or highlights it
 (Cyberpunk, Neo-brutalism). `cargo run --example checkbox_designs` shows them side by side.
 The options are listed under [Cyberpunk Look](#cyberpunk-look).
+Block symbols (5×3) draw the check and the dash large, in quadrant pixels across the centre, so the mark keeps its proportion to the box; inline symbols keep a single `✓` / `−`.
 
 ## Cyberpunk Look
 

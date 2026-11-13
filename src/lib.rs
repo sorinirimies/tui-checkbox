@@ -1797,8 +1797,8 @@ mod tests {
             .label_position(LabelPosition::Left)
             .cyber(Cyber::new().size(cyber::CyberSize::Block));
         let buf = draw(&cb, 12, 3);
-        assert_eq!(row(&buf, 1), " ARM    ✓");
-        assert_eq!(row(&buf, 2), "          ▛");
+        assert_eq!(row(&buf, 1), " ARM   ▖▟▘");
+        assert!(row(&buf, 2).ends_with('▛'));
     }
 
     #[test]
