@@ -141,10 +141,10 @@ pub enum Design {
 impl Design {
     /// Every design, in display order.
     pub const ALL: [Self; 4] = [
-        Self::Cyberpunk,
         Self::Material,
         Self::Dodai,
         Self::Neobrutalism,
+        Self::Cyberpunk,
     ];
 
     /// Human-readable name.

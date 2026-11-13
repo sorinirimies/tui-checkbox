@@ -1,6 +1,6 @@
 # VHS tape for the four design systems demo
 
-Output examples/vhs/checkbox_designs.gif
+Output examples/vhs/02_designs.gif
 
 Set FontSize 20
 Set Width 1200

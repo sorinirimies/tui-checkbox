@@ -1,9 +1,9 @@
 # VHS Recording Script for tui-checkbox Demo
 # This script demonstrates the tui-checkbox widget focusing on custom symbols
 # Install VHS: https://github.com/charmbracelet/vhs
-# Run: vhs examples/checkbox.tape
+# Run: vhs examples/vhs/01_checkbox.tape
 
-Output "examples/checkbox.gif"
+Output examples/vhs/01_checkbox.gif
 Set Theme "Catppuccin Mocha"
 Set Width 1020
 Set Height 960

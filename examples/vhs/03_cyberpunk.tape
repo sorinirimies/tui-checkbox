@@ -1,6 +1,6 @@
 # VHS tape for the cyberpunk look demo
 
-Output examples/vhs/checkbox_cyberpunk.gif
+Output examples/vhs/03_cyberpunk.gif
 
 Set FontSize 20
 Set Width 1200

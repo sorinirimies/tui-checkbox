@@ -12,7 +12,7 @@
 A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui) TUI applications.
 
 ## Preview
-![checkbox](https://github.com/user-attachments/assets/51e2f5f7-4546-4809-a50a-e754f9ecd866)
+![checkbox](examples/vhs/01_checkbox.gif)
 
 ## Features
 
@@ -83,9 +83,38 @@ let locked = Checkbox::new("Unavailable", false).disabled(true);
 let constraint = ratatui::layout::Constraint::Length(checkbox.width());
 ```
 
+## Design Systems
+
+![Designs Demo](examples/vhs/02_designs.gif)
+
+`Checkbox::design` draws the checkbox in one of the four dodai-ui design systems. The same
+options (`size`, `shadow`, `readout`, `glow`, `flat`, `palette`, `uppercase`) apply to all of them
+through `Cyber::for_design(design)`:
+
+| `Design` | Off | On | Palette |
+|---|---|---|---|
+| `Material` | rounded outline `╭───╮` | tonal filled box with a tick | `CyberPalette::MATERIAL` |
+| `Dodai` | flat frosted glass | rounded primary → secondary gradient wash | `CyberPalette::DODAI` |
+| `Neobrutalism` | heavy border, flat fill | heavy border, main-colour fill, hard shadow | `CyberPalette::NEOBRUTALISM` |
+| `Cyberpunk` | dark slab | neon slab, cut corners, readout `//ONLINE` | `CyberPalette::CYBERPUNK` |
+
+```rust
+use tui_checkbox::Checkbox;
+use tui_checkbox::cyber::{Cyber, CyberSize, Design};
+
+let simple = Checkbox::new("Notifications", true).design(Design::Material);
+let chunky = Checkbox::new("Notifications", true).cyber(
+    Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block).shadow(true),
+);
+```
+
+Focus lays a tonal state layer under the label (Material, Dodai) or highlights it
+(Cyberpunk, Neo-brutalism). `cargo run --example checkbox_designs` shows them side by side.
+The options are listed under [Cyberpunk Look](#cyberpunk-look).
+
 ## Cyberpunk Look
 
-![Cyberpunk Demo](examples/vhs/checkbox_cyberpunk.gif)
+![Cyberpunk Demo](examples/vhs/03_cyberpunk.gif)
 
 `Checkbox::cyber` swaps the symbol for a filled slab with cut ("chamfered") corners, in the
 shape language of the dodai-ui cyberpunk design system:
@@ -135,34 +164,6 @@ let checkbox = Checkbox::new("Arm system", true)
 | `glitch(Some(frame))` | Glitches the mark and two label cells for this frame; deterministic |
 | `decrypt(Some(percent))` | Scrambles the label and reveals it left to right as `percent` goes 0 → 100 |
 | `palette` | Colours; otherwise the theme's (`CyberPalette::from_theme`), else `CYBERPUNK` |
-
-### Four design systems
-
-![Designs Demo](examples/vhs/checkbox_designs.gif)
-
-`Checkbox::design` draws the checkbox in one of the four dodai-ui design systems. The same
-options (`size`, `shadow`, `readout`, `glow`, `flat`, `palette`, `uppercase`) apply to all of them
-through `Cyber::for_design(design)`:
-
-| `Design` | Off | On | Palette |
-|---|---|---|---|
-| `Cyberpunk` | dark slab | neon slab, cut corners, readout `//ONLINE` | `CyberPalette::CYBERPUNK` |
-| `Material` | rounded outline `╭───╮` | tonal filled box with a tick | `CyberPalette::MATERIAL` |
-| `Dodai` | flat frosted glass | rounded primary → secondary gradient wash | `CyberPalette::DODAI` |
-| `Neobrutalism` | heavy border, flat fill | heavy border, main-colour fill, hard shadow | `CyberPalette::NEOBRUTALISM` |
-
-```rust
-use tui_checkbox::Checkbox;
-use tui_checkbox::cyber::{Cyber, CyberSize, Design};
-
-let simple = Checkbox::new("Notifications", true).design(Design::Material);
-let chunky = Checkbox::new("Notifications", true).cyber(
-    Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block).shadow(true),
-);
-```
-
-Focus lays a tonal state layer under the label (Material, Dodai) or highlights it
-(Cyberpunk, Neo-brutalism). `cargo run --example checkbox_designs` shows them side by side.
 
 `glitch` and `decrypt` are pure functions of the frame / percent you pass, so the app owns
 the animation: after a toggle, count a frame up on every tick for a few hundred milliseconds
@@ -264,7 +265,7 @@ cargo run --example checkbox_label_position
 
 This demonstrates: right, left, top, and bottom label positions.
 
-![Label Position Demo](examples/vhs/checkbox_label_position.gif)
+![Label Position Demo](examples/vhs/04_label_position.gif)
 
 ### Alignment Example
 
@@ -278,7 +279,7 @@ This demonstrates:
 - Horizontal alignment: left, center, right
 - Vertical alignment: top, center, bottom
 
-![Alignment Demo](examples/vhs/checkbox_alignment_demo.gif)
+![Alignment Demo](examples/vhs/05_alignment.gif)
 
 ### Width & Wrapping Example
 
@@ -293,7 +294,7 @@ This demonstrates:
 - Text wrapping (enabled vs disabled)
 - Combined features
 
-![Width & Wrapping Demo](examples/vhs/checkbox_width_wrapping.gif)
+![Width & Wrapping Demo](examples/vhs/06_width_wrapping.gif)
 
 ## Examples
 

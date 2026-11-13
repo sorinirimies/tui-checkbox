@@ -1,6 +1,6 @@
 # VHS tape for checkbox width and wrapping demo
 
-Output examples/vhs/checkbox_width_wrapping.gif
+Output examples/vhs/06_width_wrapping.gif
 
 Set FontSize 20
 Set Width 1130

@@ -1,6 +1,6 @@
 # VHS tape for checkbox alignment demo
 
-Output examples/vhs/checkbox_alignment_demo.gif
+Output examples/vhs/05_alignment.gif
 
 Set FontSize 20
 Set Width 1020

@@ -1,6 +1,6 @@
 # VHS tape for checkbox label position demo
 
-Output examples/vhs/checkbox_label_position.gif
+Output examples/vhs/04_label_position.gif
 
 Set FontSize 20
 Set Width 910
