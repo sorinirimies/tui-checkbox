@@ -20,7 +20,7 @@ A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui)
 - 🎯 **Focused** and **disabled** states with their own styles
 - 🎨 Customizable styling for checkbox and label separately
 - 🔤 Custom symbols (unicode, emoji, ASCII) and presets in `symbols`
-- 🌆 **Cyberpunk look** - chamfered slabs, hard shadows, readouts, glow, glitch & decrypt - **optional**
+- 🌆 **Design looks** - Cyberpunk (chamfered slabs, readouts, glow, glitch & decrypt), Material, Dodai and Neo-brutalism - **optional**
 - 📐 `width()` / `height()` for sizing layout constraints
 - 📦 Block wrapper - **optional**
 - 📍 Label positioning (right, left, top, bottom) - **optional**
@@ -91,17 +91,20 @@ let constraint = ratatui::layout::Constraint::Length(checkbox.width());
 shape language of the dodai-ui cyberpunk design system:
 
 ```text
-▐✓◤  ARM SYSTEM  //ONLINE      checked: a neon slab, bottom-right corner cut
-▐ ◤  ARM SYSTEM  //OFFLINE     unchecked: a dark slab
-▐−◤  ARM SYSTEM  //PARTIAL     indeterminate: the secondary colour
-◢✓◤  ARM SYSTEM◤               focused: the label turns into a bar with a cut tip
-▐✓◤  ARM SYSTEM◤               flat + focused: same cut corners, nothing painted behind the label
+█✓▛  ARM SYSTEM  //ONLINE      checked: a neon slab, bottom-right corner cut
+█ ▛  ARM SYSTEM  //OFFLINE     unchecked: a dark slab
+█−▛  ARM SYSTEM  //PARTIAL     indeterminate: the secondary colour
+▟✓▛  ARM SYSTEM▛               focused: the label turns into a bar with a cut tip
+█✓▛  ARM SYSTEM▛               flat + focused: same cut corners, nothing painted behind the label
 
-◢   ◣                          CyberSize::Block (5×3), Tab chamfer,
-  ✓  ▌  ARM SYSTEM              with a hard offset shadow
-     ▌  //ONLINE
- ▀▀▀▀▘
+▟███▙                          CyberSize::Block (5×3), Tab chamfer,
+█ ✓ █▌ ARM SYSTEM              with a hard offset shadow
+█████▌ //ONLINE
+ ▝▀▀▀▀▘
 ```
+
+Every glyph is a block element (`█ ▛ ▜ ▙ ▟ ▀ ▄ ▌ ▐`), so the slabs have no gaps in any
+terminal font; a cut corner is a quarter cell taken out of the slab.
 
 ```rust
 use tui_checkbox::Checkbox;
@@ -123,7 +126,7 @@ let checkbox = Checkbox::new("Arm system", true)
 | Option | What it does |
 |---|---|
 | `chamfer` | Which corners are cut: `Slab` (bottom-right), `Diagonal`, `AntiDiagonal`, `Tab` (top), `Bracket` (left), `Sharp` |
-| `size` | `Inline` (`▐✓◤`, one row) or `Block` (5×3 slab, label on the middle row) |
+| `size` | `Inline` (`█✓▛`, one row) or `Block` (5×3 slab, label on the middle row) |
 | `shadow` | Hard offset shadow below (and right of) the slab; adds a row and a column |
 | `flat` | Cut-corner slab only: no shadow, no glow, no filled focus bar (focus colours the label instead). Wins over `shadow` / `glow` in any order |
 | `uppercase` | Uppercases the label (default `true`) |
@@ -132,6 +135,34 @@ let checkbox = Checkbox::new("Arm system", true)
 | `glitch(Some(frame))` | Glitches the mark and two label cells for this frame; deterministic |
 | `decrypt(Some(percent))` | Scrambles the label and reveals it left to right as `percent` goes 0 → 100 |
 | `palette` | Colours; otherwise the theme's (`CyberPalette::from_theme`), else `CYBERPUNK` |
+
+### Four design systems
+
+![Designs Demo](examples/vhs/checkbox_designs.gif)
+
+`Checkbox::design` draws the checkbox in one of the four dodai-ui design systems. The same
+options (`size`, `shadow`, `readout`, `glow`, `flat`, `palette`, `uppercase`) apply to all of them
+through `Cyber::for_design(design)`:
+
+| `Design` | Off | On | Palette |
+|---|---|---|---|
+| `Cyberpunk` | dark slab | neon slab, cut corners, readout `//ONLINE` | `CyberPalette::CYBERPUNK` |
+| `Material` | rounded outline `╭───╮` | tonal filled box with a tick | `CyberPalette::MATERIAL` |
+| `Dodai` | flat frosted glass | rounded primary → secondary gradient wash | `CyberPalette::DODAI` |
+| `Neobrutalism` | heavy border, flat fill | heavy border, main-colour fill, hard shadow | `CyberPalette::NEOBRUTALISM` |
+
+```rust
+use tui_checkbox::Checkbox;
+use tui_checkbox::cyber::{Cyber, CyberSize, Design};
+
+let simple = Checkbox::new("Notifications", true).design(Design::Material);
+let chunky = Checkbox::new("Notifications", true).cyber(
+    Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block).shadow(true),
+);
+```
+
+Focus lays a tonal state layer under the label (Material, Dodai) or highlights it
+(Cyberpunk, Neo-brutalism). `cargo run --example checkbox_designs` shows them side by side.
 
 `glitch` and `decrypt` are pure functions of the frame / percent you pass, so the app owns
 the animation: after a toggle, count a frame up on every tick for a few hundred milliseconds

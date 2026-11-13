@@ -21,7 +21,12 @@ struct In {
 
 // Very small areas (0..=5) where layout arithmetic is most likely to underflow.
 fuzz_target!(|i: In| {
-    let size = Size { w: i.w % 6, h: i.h_ % 6, x: i.w, y: i.h_ };
+    let size = Size {
+        w: i.w % 6,
+        h: i.h_ % 6,
+        x: i.w,
+        y: i.h_,
+    };
     let cb = Checkbox::new(i.label.as_str(), i.checked)
         .label_position(i.pos.get())
         .horizontal_alignment(i.h.get())

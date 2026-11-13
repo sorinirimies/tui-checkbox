@@ -70,9 +70,10 @@ use ratatui::style::{Modifier, Style, Styled};
 use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Widget};
 
-use crate::cyber::{Cyber, CyberPalette, Glyph, Mark, State};
+use crate::cyber::{Cyber, CyberPalette, Design, Glyph, Mark, State};
 
 pub mod cyber;
+mod design;
 pub mod symbols;
 
 #[cfg(feature = "theme")]
@@ -733,6 +734,25 @@ impl<'a> Checkbox<'a> {
         self
     }
 
+    /// Draws the checkbox in a dodai-ui design system: [`Design::Cyberpunk`],
+    /// [`Design::Material`], [`Design::Dodai`] or [`Design::Neobrutalism`].
+    ///
+    /// Shorthand for `.cyber(Cyber::for_design(design))`; use [`cyber`](Self::cyber) with
+    /// [`Cyber::design`] to also set the size, shadow, readout and so on.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use tui_checkbox::Checkbox;
+    /// use tui_checkbox::cyber::Design;
+    ///
+    /// let checkbox = Checkbox::new("Notifications", true).design(Design::Material);
+    /// ```
+    #[must_use = "method moves the value of self and returns the modified value"]
+    pub const fn design(self, design: Design) -> Self {
+        self.cyber(Cyber::for_design(design))
+    }
+
     /// Whether the checkbox is checked.
     #[must_use]
     pub const fn is_checked(&self) -> bool {
@@ -970,7 +990,7 @@ impl Checkbox<'_> {
         if let Some(t) = self.theme {
             return t.cyber;
         }
-        CyberPalette::CYBERPUNK
+        cyber.design_kind().palette()
     }
 
     /// Patches the focus and disabled styles over `style` as the state asks.
@@ -1728,12 +1748,27 @@ mod tests {
     fn cyber_renders_slab_label_and_readout() {
         let cb = Checkbox::new("Arm", true).cyber(Cyber::new().readout(true));
         let buf = draw(&cb, 30, 1);
-        assert_eq!(row(&buf, 0), "▐✓◤  ARM  //ONLINE");
+        assert_eq!(row(&buf, 0), "█✓▛  ARM  //ONLINE");
         let pal = CyberPalette::CYBERPUNK;
         assert_eq!(buf[(1, 0)].bg, pal.primary);
         assert_eq!(buf[(1, 0)].fg, pal.ink);
         assert_eq!(buf[(0, 0)].fg, pal.primary);
         assert_eq!(buf[(5, 0)].fg, pal.text);
+    }
+
+    #[test]
+    fn design_picks_the_design_palette_and_shape() {
+        let cb = Checkbox::new("Arm", true).design(Design::Neobrutalism);
+        let buf = draw(&cb, 20, 1);
+        assert_eq!(row(&buf, 0), "▌✓▐  Arm");
+        let pal = CyberPalette::NEOBRUTALISM;
+        assert_eq!(buf[(1, 0)].bg, pal.primary);
+        let off = Checkbox::new("Arm", false).design(Design::Material);
+        assert_eq!(row(&draw(&off, 20, 1), 0), "▐ ▌  Arm");
+        // An explicit palette still wins over the design's.
+        let own = Checkbox::new("Arm", true)
+            .cyber(Cyber::for_design(Design::Dodai).palette(CyberPalette::NEON));
+        assert_eq!(draw(&own, 20, 1)[(0, 0)].fg, CyberPalette::NEON.primary);
     }
 
     #[test]
@@ -1747,7 +1782,7 @@ mod tests {
             (solid.width(), solid.height())
         );
         let buf = draw(&flat, 20, 2);
-        assert_eq!(row(&buf, 0), "▐✓◤  ARM◤");
+        assert_eq!(row(&buf, 0), "█✓▛  ARM▛");
         assert_eq!(row(&buf, 1), "");
         let pal = CyberPalette::CYBERPUNK;
         // The slab is still filled; the label is not.
@@ -1763,7 +1798,7 @@ mod tests {
             .cyber(Cyber::new().size(cyber::CyberSize::Block));
         let buf = draw(&cb, 12, 3);
         assert_eq!(row(&buf, 1), " ARM    ✓");
-        assert_eq!(row(&buf, 2), "          ◤");
+        assert_eq!(row(&buf, 2), "          ▛");
     }
 
     #[test]

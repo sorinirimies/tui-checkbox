@@ -4,7 +4,7 @@ use arbitrary::Arbitrary;
 use common::*;
 use libfuzzer_sys::fuzz_target;
 use tui_checkbox::Checkbox;
-use tui_checkbox::cyber::{Chamfer, Cyber, CyberPalette, CyberSize};
+use tui_checkbox::cyber::{Chamfer, Cyber, CyberPalette, CyberSize, Design};
 
 #[derive(Arbitrary, Debug)]
 struct In {
@@ -13,6 +13,7 @@ struct In {
     indeterminate: bool,
     focused: bool,
     disabled: bool,
+    design: u8,
     chamfer: u8,
     palette: u8,
     block: bool,
@@ -33,9 +34,13 @@ struct In {
 }
 
 fuzz_target!(|i: In| {
-    let cyber = Cyber::new()
+    let cyber = Cyber::for_design(Design::ALL[usize::from(i.design) % Design::ALL.len()])
         .chamfer(Chamfer::ALL[usize::from(i.chamfer) % Chamfer::ALL.len()])
-        .size(if i.block { CyberSize::Block } else { CyberSize::Inline })
+        .size(if i.block {
+            CyberSize::Block
+        } else {
+            CyberSize::Inline
+        })
         .shadow(i.shadow)
         .flat(i.flat)
         .uppercase(i.uppercase)

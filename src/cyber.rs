@@ -4,16 +4,23 @@
 //! chamfered ("cut") corners, a hard offset shadow, uppercase labels, a status readout, and
 //! glitch / decrypt effects driven by a frame counter the caller owns.
 //!
-//! ```text
-//! ▐✓◤  ARM SYSTEM  //ONLINE          inline, Slab chamfer, readout
-//! ◢✓◤  ARM SYSTEM◤                 focused (label inverted into a bar)
-//! ▐ ◤  ARM SYSTEM  //OFFLINE        unchecked: a dark slab
+//! Every glyph is a plain block element (`█ ▛ ▜ ▙ ▟ ▀ ▄ ▌ ▐`) so the slabs are gap-free in any
+//! terminal font; a "cut" corner is a quarter cell taken out of the slab.
 //!
-//! ◢   ◣                             block (5×3), Tab chamfer, shadow
-//!   ✓  ▌  ARM SYSTEM
-//!      ▌  //ONLINE
-//!  ▀▀▀▀▘
+//! ```text
+//! █✓▛  ARM SYSTEM  //ONLINE          inline, Slab chamfer, readout
+//! ▟✓▛  ARM SYSTEM▛                   focused (label inverted into a bar)
+//! █ ▛  ARM SYSTEM  //OFFLINE         unchecked: a dark slab
+//!
+//! ▟███▙                              block (5×3), Tab chamfer, shadow
+//! █ ✓ █▌  ARM SYSTEM
+//! █████▌  //ONLINE
+//!  ▝▀▀▀▀▘
 //! ```
+//!
+//! The same engine draws three more designs from the dodai-ui design system, picked with
+//! [`Design`] ([`Checkbox::design`]): Material (rounded outline, tonal fill), Dodai (soft
+//! gradient glass) and Neo-brutalism (heavy border, hard shadow).
 //!
 //! Enable it with [`Checkbox::cyber`]:
 //!
@@ -32,6 +39,7 @@
 //!
 //! [`Checkbox`]: crate::Checkbox
 //! [`Checkbox::cyber`]: crate::Checkbox::cyber
+//! [`Checkbox::design`]: crate::Checkbox::design
 
 use ratatui::style::{Color, Modifier, Style};
 use ratatui::text::{Line, Span};
@@ -91,28 +99,96 @@ impl Chamfer {
     }
 
     /// Left and right edge glyphs of the one-row slab (drawn in the fill colour).
+    ///
+    /// Full cells with a quarter taken out per cut corner; two cuts on one side leave a
+    /// half cell.
     const fn inline_edges(self) -> (&'static str, &'static str) {
         let [tl, tr, bl, br] = self.corners();
         let left = match (tl, bl) {
-            (true, true) => "◀",
-            (true, false) => "◢",
-            (false, true) => "◥",
-            (false, false) => "▐",
+            (true, true) => "▐",
+            (true, false) => "▟",
+            (false, true) => "▜",
+            (false, false) => "█",
         };
         let right = match (tr, br) {
-            (true, true) => "▶",
-            (true, false) => "◣",
-            (false, true) => "◤",
-            (false, false) => "▌",
+            (true, true) => "▌",
+            (true, false) => "▙",
+            (false, true) => "▛",
+            (false, false) => "█",
         };
         (left, right)
+    }
+}
+
+/// Which design system the checkbox is drawn in.
+///
+/// The shapes follow the four dodai-ui designs: [`Design::Cyberpunk`] cut-corner slabs,
+/// [`Design::Material`] a rounded outline that fills tonally, [`Design::Dodai`] soft
+/// gradient glass and [`Design::Neobrutalism`] a heavy border with a hard shadow.
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
+pub enum Design {
+    /// Chamfered slabs, readouts, glow and glitch (default).
+    #[default]
+    Cyberpunk,
+    /// Material 3: rounded outline when off, filled with a tick when on.
+    Material,
+    /// Dodai: rounded gradient glass, soft tinted shadow.
+    Dodai,
+    /// Neo-brutalism: thick border, flat fill, hard offset shadow.
+    Neobrutalism,
+}
+
+impl Design {
+    /// Every design, in display order.
+    pub const ALL: [Self; 4] = [
+        Self::Cyberpunk,
+        Self::Material,
+        Self::Dodai,
+        Self::Neobrutalism,
+    ];
+
+    /// Human-readable name.
+    #[must_use]
+    pub const fn name(self) -> &'static str {
+        match self {
+            Self::Cyberpunk => "Cyberpunk",
+            Self::Material => "Material",
+            Self::Dodai => "Dodai",
+            Self::Neobrutalism => "Neo-brutalism",
+        }
+    }
+
+    /// The design's own colours.
+    #[must_use]
+    pub const fn palette(self) -> CyberPalette {
+        match self {
+            Self::Cyberpunk => CyberPalette::CYBERPUNK,
+            Self::Material => CyberPalette::MATERIAL,
+            Self::Dodai => CyberPalette::DODAI,
+            Self::Neobrutalism => CyberPalette::NEOBRUTALISM,
+        }
+    }
+
+    /// Whether labels are uppercased by default.
+    const fn uppercase(self) -> bool {
+        matches!(self, Self::Cyberpunk)
+    }
+
+    /// Default readout texts: checked, unchecked, indeterminate.
+    const fn readout(self) -> [&'static str; 3] {
+        match self {
+            Self::Cyberpunk => Cyber::READOUT,
+            Self::Material => ["On", "Off", "Mixed"],
+            Self::Dodai => ["On", "Off", "Partial"],
+            Self::Neobrutalism => ["ON", "OFF", "MIX"],
+        }
     }
 }
 
 /// Size of the cyber checkbox.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum CyberSize {
-    /// One row, three cells: `▐✓◤` (default).
+    /// One row, three cells: `█✓▛` (default).
     #[default]
     Inline,
     /// Three rows, five cells: a chunky slab with the label on the middle row.
@@ -130,7 +206,7 @@ pub struct CyberPalette {
     pub surface: Color,
     /// Label text.
     pub text: Color,
-    /// Unchecked outline, disabled parts and readout `OFFLINE`.
+    /// Unchecked outline (the border in Neo-brutalism), disabled parts and readout `OFFLINE`.
     pub muted: Color,
     /// The mark drawn on a filled slab (usually the background colour).
     pub ink: Color,
@@ -183,7 +259,42 @@ impl CyberPalette {
         shadow: Color::Rgb(0x3a, 0x0a, 0x5a),
     };
 
-    /// Every built-in palette with its name.
+    /// Material 3 dark: lavender primary, tonal surface, `outline` as `muted`.
+    pub const MATERIAL: Self = Self {
+        primary: Color::Rgb(0xd0, 0xbc, 0xff),
+        secondary: Color::Rgb(0xcc, 0xc2, 0xdc),
+        surface: Color::Rgb(0x2b, 0x29, 0x30),
+        text: Color::Rgb(0xe6, 0xe0, 0xe9),
+        muted: Color::Rgb(0x93, 0x8f, 0x99),
+        ink: Color::Rgb(0x38, 0x1e, 0x72),
+        shadow: Color::Rgb(0x14, 0x12, 0x18),
+    };
+
+    /// Dodai dark: indigo to aqua gradient on frosted glass, soft indigo shadow.
+    pub const DODAI: Self = Self {
+        primary: Color::Rgb(0x8f, 0x7d, 0xff),
+        secondary: Color::Rgb(0x4f, 0xd1, 0xe0),
+        surface: Color::Rgb(0x26, 0x22, 0x56),
+        text: Color::Rgb(0xec, 0xea, 0xff),
+        muted: Color::Rgb(0x8c, 0x87, 0xb8),
+        ink: Color::Rgb(0x0f, 0x0d, 0x2a),
+        shadow: Color::Rgb(0x1d, 0x19, 0x48),
+    };
+
+    /// Neo-brutalism on a dark page: yellow fill, off-white border and shadow.
+    ///
+    /// `muted` is the border colour.
+    pub const NEOBRUTALISM: Self = Self {
+        primary: Color::Rgb(0xfa, 0xcc, 0x00),
+        secondary: Color::Rgb(0xff, 0x90, 0xe8),
+        surface: Color::Rgb(0x3a, 0x3a, 0x40),
+        text: Color::Rgb(0xf5, 0xf3, 0xe8),
+        muted: Color::Rgb(0xf5, 0xf3, 0xe8),
+        ink: Color::Rgb(0x0a, 0x0a, 0x0a),
+        shadow: Color::Rgb(0x80, 0x7e, 0x74),
+    };
+
+    /// The four cyberpunk palettes with their names.
     pub const ALL: [(&'static str, Self); 4] = [
         ("Cyberpunk", Self::CYBERPUNK),
         ("Neon", Self::NEON),
@@ -217,6 +328,15 @@ impl Default for CyberPalette {
     }
 }
 
+/// Whether and how the status readout shows.
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+enum Readout {
+    Off,
+    /// The design's own texts.
+    Auto,
+    Custom([&'static str; 3]),
+}
+
 /// Configuration of the cyber look; pass it to [`Checkbox::cyber`](crate::Checkbox::cyber).
 ///
 /// Defaults: [`Chamfer::Slab`], [`CyberSize::Inline`], uppercase label, no shadow, no readout,
@@ -229,7 +349,8 @@ pub struct Cyber {
     shadow: bool,
     flat: bool,
     uppercase: bool,
-    readout: Option<[&'static str; 3]>,
+    readout: Readout,
+    design: Design,
     glow: bool,
     glitch: Option<u16>,
     decrypt: Option<u8>,
@@ -255,7 +376,8 @@ impl Cyber {
             shadow: false,
             flat: false,
             uppercase: true,
-            readout: None,
+            readout: Readout::Off,
+            design: Design::Cyberpunk,
             glow: false,
             glitch: None,
             decrypt: None,
@@ -263,7 +385,24 @@ impl Cyber {
         }
     }
 
-    /// Which corners are cut.
+    /// The look of a design system (colours, shapes, label case) in one call.
+    ///
+    /// `Cyber::for_design(Design::Cyberpunk)` is [`Cyber::new`]. The other designs ignore
+    /// [`Cyber::chamfer`]; size, shadow, readout, glow, flat, glitch and decrypt apply to all.
+    #[must_use]
+    pub const fn for_design(design: Design) -> Self {
+        Self::new().design(design)
+    }
+
+    /// Switches the design system; also sets its default label case.
+    #[must_use]
+    pub const fn design(mut self, design: Design) -> Self {
+        self.design = design;
+        self.uppercase = design.uppercase();
+        self
+    }
+
+    /// Which corners are cut (Cyberpunk only).
     #[must_use]
     pub const fn chamfer(mut self, chamfer: Chamfer) -> Self {
         self.chamfer = chamfer;
@@ -289,7 +428,7 @@ impl Cyber {
     /// Flat look: keeps the cut-corner slab but drops everything painted behind it.
     ///
     /// No shadow, no glow and no filled focus bar; focus colours the label in the primary
-    /// colour and keeps the `◤` tip. Wins over [`Cyber::shadow`] and [`Cyber::glow`] in
+    /// colour and keeps the `▛` tip. Wins over [`Cyber::shadow`] and [`Cyber::glow`] in
     /// any call order, and the layout is the same width as the non-flat look.
     #[must_use]
     pub const fn flat(mut self, flat: bool) -> Self {
@@ -304,12 +443,13 @@ impl Cyber {
         self
     }
 
-    /// Shows a status readout (`//ONLINE`, `//OFFLINE`, `//PARTIAL`) after the label.
+    /// Shows a status readout after the label: `//ONLINE`, `//OFFLINE`, `//PARTIAL` in
+    /// Cyberpunk, `On` / `Off` / `Mixed`-style words in the other designs.
     ///
     /// Inline it follows the label on the same row; a block puts it on the row below.
     #[must_use]
     pub const fn readout(mut self, readout: bool) -> Self {
-        self.readout = if readout { Some(Self::READOUT) } else { None };
+        self.readout = if readout { Readout::Auto } else { Readout::Off };
         self
     }
 
@@ -321,7 +461,7 @@ impl Cyber {
         unchecked: &'static str,
         indeterminate: &'static str,
     ) -> Self {
-        self.readout = Some([checked, unchecked, indeterminate]);
+        self.readout = Readout::Custom([checked, unchecked, indeterminate]);
         self
     }
 
@@ -357,6 +497,12 @@ impl Cyber {
     pub const fn palette(mut self, palette: CyberPalette) -> Self {
         self.palette = Some(palette);
         self
+    }
+
+    /// The design system this look draws.
+    #[must_use]
+    pub const fn design_kind(&self) -> Design {
+        self.design
     }
 
     /// The explicit palette, if any.
@@ -437,79 +583,80 @@ pub(crate) fn mix(a: Color, b: Color, t: f64) -> Color {
 }
 
 /// Fill colour of the slab and the mark drawn on it.
-const fn fill(pal: &CyberPalette, state: State) -> (Color, char) {
+///
+/// Material draws an unchecked box as an outline only, so its "fill" there is `Color::Reset`.
+fn fill(cfg: &Cyber, pal: &CyberPalette, state: State) -> (Color, char) {
+    let mark = match state.mark {
+        Mark::Checked => '✓',
+        Mark::Mixed => '−',
+        Mark::Unchecked => ' ',
+    };
     if state.disabled {
-        return (
-            pal.surface,
-            match state.mark {
-                Mark::Checked => '✓',
-                Mark::Mixed => '−',
-                Mark::Unchecked => ' ',
-            },
-        );
+        return (pal.surface, mark);
     }
+    let design = cfg.design;
     match state.mark {
-        Mark::Checked => (pal.primary, '✓'),
-        Mark::Mixed => (pal.secondary, '−'),
-        Mark::Unchecked => (pal.surface, ' '),
+        Mark::Checked => (pal.primary, mark),
+        Mark::Mixed if design == Design::Material => (pal.primary, mark),
+        Mark::Mixed => (pal.secondary, mark),
+        Mark::Unchecked => (
+            match design {
+                Design::Material => Color::Reset,
+                _ if state.focused => mix(pal.surface, pal.primary, 0.35),
+                _ => pal.surface,
+            },
+            mark,
+        ),
     }
 }
 
 /// Builds the symbol for `state`.
 pub(crate) fn glyph(cfg: &Cyber, pal: &CyberPalette, state: State) -> Glyph {
-    let (fill_c, mut mark) = fill(pal, state);
+    let (fill_c, mut mark) = fill(cfg, pal, state);
     let mut mark_style = Style::new().fg(if state.disabled { pal.muted } else { pal.ink });
     mark_style = mark_style.bg(fill_c).add_modifier(Modifier::BOLD);
-    let mut edge_c = fill_c;
-    if state.focused && !state.disabled && state.mark == Mark::Unchecked {
-        edge_c = pal.primary;
-    }
     let burst = cfg.glitch.filter(|&f| glitch_burst(f));
     if let Some(f) = burst {
         mark = pick(&GLITCH_MARKS, u32::from(f), 1);
         mark_style = mark_style.fg(pal.secondary);
     }
 
-    let mut lines = match cfg.size {
-        CyberSize::Inline => {
-            let (l, r) = cfg.chamfer.inline_edges();
-            let r = match burst {
-                Some(f) if noise(u32::from(f), 2).is_multiple_of(2) => "▞",
-                _ => r,
-            };
-            vec![Line::from(vec![
-                Span::styled(l, Style::new().fg(edge_c)),
-                Span::styled(mark.to_string(), mark_style),
-                Span::styled(r, Style::new().fg(edge_c)),
-            ])]
-        }
-        CyberSize::Block if state.mark == Mark::Unchecked || state.disabled => {
-            let outline = match (state.disabled, edge_c == pal.primary) {
-                (true, _) => pal.surface,
-                (false, true) => pal.primary,
-                (false, false) => pal.muted,
-            };
-            outline_block(cfg.chamfer, outline, mark, mark_style, state)
-        }
-        CyberSize::Block => solid_block(cfg.chamfer, fill_c, mark, mark_style),
+    let mut lines = match cfg.design {
+        Design::Cyberpunk => match cfg.size {
+            CyberSize::Inline => {
+                let (l, r) = cfg.chamfer.inline_edges();
+                let r = match burst {
+                    Some(f) if noise(u32::from(f), 2).is_multiple_of(2) => "▞",
+                    _ => r,
+                };
+                let edge = Style::new().fg(fill_c);
+                vec![Line::from(vec![
+                    Span::styled(l, edge),
+                    Span::styled(mark.to_string(), mark_style),
+                    Span::styled(r, edge),
+                ])]
+            }
+            CyberSize::Block => slab(cfg.chamfer.corners(), fill_c, mark, mark_style),
+        },
+        design => crate::design::body(
+            design,
+            cfg.is_block(),
+            pal,
+            state,
+            (fill_c, mark, mark_style),
+        ),
     };
     let mut width: u16 = match cfg.size {
         CyberSize::Inline => 3,
         CyberSize::Block => 5,
     };
     if cfg.shadow && !cfg.flat {
-        let shadow = Style::new().fg(if state.disabled {
+        let colour = if state.disabled {
             pal.surface
         } else {
             pal.shadow
-        });
-        let rows = lines.len();
-        for (i, line) in lines.iter_mut().enumerate() {
-            let cell = if i == 0 || rows == 1 { " " } else { "▌" };
-            line.spans.push(Span::styled(cell, shadow));
-        }
-        let bottom = format!(" {}▘", "▀".repeat(usize::from(width - 1)));
-        lines.push(Line::from(Span::styled(bottom, shadow)));
+        };
+        add_shadow(&mut lines, width, colour);
         width += 1;
     }
     Glyph {
@@ -522,77 +669,44 @@ pub(crate) fn glyph(cfg: &Cyber, pal: &CyberPalette, state: State) -> Glyph {
     }
 }
 
-/// A filled 5×3 slab; cut corners are triangles in the fill colour.
-fn solid_block(
-    chamfer: Chamfer,
+/// Adds a half-cell offset shadow right of and below the symbol (one column, one row).
+fn add_shadow(lines: &mut Vec<Line<'static>>, width: u16, colour: Color) {
+    let shadow = Style::new().fg(colour);
+    for (i, line) in lines.iter_mut().enumerate() {
+        // The first row starts half a row lower, so its cell is a lower quadrant.
+        let cell = if i == 0 { "▖" } else { "▌" };
+        line.spans.push(Span::styled(cell, shadow));
+    }
+    let bottom = format!("▝{}▘", "▀".repeat(usize::from(width - 1)));
+    lines.push(Line::from(Span::styled(bottom, shadow)));
+}
+
+/// Quarter-cell glyph that removes the corner `i` (`[tl, tr, bl, br]`) from a cell.
+const CUT: [&str; 4] = ["▟", "▙", "▜", "▛"];
+
+/// A filled 5×3 slab; a cut corner is a quarter cell taken out of its corner cell.
+pub(crate) fn slab(
+    cuts: [bool; 4],
     fill_c: Color,
     mark: char,
     mark_style: Style,
 ) -> Vec<Line<'static>> {
-    let [tl, tr, bl, br] = chamfer.corners();
     let body = Style::new().bg(fill_c);
-    let cut = Style::new().fg(fill_c);
-    let corner = |is_cut: bool, glyph: &'static str| {
-        if is_cut {
-            Span::styled(glyph, cut)
+    let corner = |i: usize| {
+        if cuts[i] {
+            Span::styled(CUT[i], Style::new().fg(fill_c))
         } else {
             Span::styled(" ", body)
         }
     };
     vec![
-        Line::from(vec![
-            corner(tl, "◢"),
-            Span::styled("   ", body),
-            corner(tr, "◣"),
-        ]),
+        Line::from(vec![corner(0), Span::styled("   ", body), corner(1)]),
         Line::from(vec![
             Span::styled("  ", body),
             Span::styled(mark.to_string(), mark_style),
             Span::styled("  ", body),
         ]),
-        Line::from(vec![
-            corner(bl, "◥"),
-            Span::styled("   ", body),
-            corner(br, "◤"),
-        ]),
-    ]
-}
-
-/// An outlined 5×3 box; cut corners are thin diagonals.
-fn outline_block(
-    chamfer: Chamfer,
-    edge_c: Color,
-    mark: char,
-    mark_style: Style,
-    state: State,
-) -> Vec<Line<'static>> {
-    let [tl, tr, bl, br] = chamfer.corners();
-    let edge = Style::new().fg(edge_c);
-    let c = |is_cut: bool, cut: &'static str, square: &'static str| {
-        Span::styled(if is_cut { cut } else { square }, edge)
-    };
-    // A disabled checked box keeps its mark, drawn without a fill.
-    let mark_span = if state.mark == Mark::Unchecked {
-        Span::raw(mark.to_string())
-    } else {
-        Span::styled(mark.to_string(), mark_style.bg(Color::Reset))
-    };
-    vec![
-        Line::from(vec![
-            c(tl, "╱", "▛"),
-            Span::styled("▀▀▀", edge),
-            c(tr, "╲", "▜"),
-        ]),
-        Line::from(vec![
-            Span::styled("▌ ", edge),
-            mark_span,
-            Span::styled(" ▐", edge),
-        ]),
-        Line::from(vec![
-            c(bl, "╲", "▙"),
-            Span::styled("▄▄▄", edge),
-            c(br, "╱", "▟"),
-        ]),
+        Line::from(vec![corner(2), Span::styled("   ", body), corner(3)]),
     ]
 }
 
@@ -681,7 +795,11 @@ pub(crate) fn transform_label(
 
 /// The readout span for `state`, if enabled.
 pub(crate) fn readout(cfg: &Cyber, pal: &CyberPalette, state: State) -> Option<Span<'static>> {
-    let [on, off, mixed] = cfg.readout?;
+    let [on, off, mixed] = match cfg.readout {
+        Readout::Off => return None,
+        Readout::Auto => cfg.design.readout(),
+        Readout::Custom(texts) => texts,
+    };
     let (text, style) = match state.mark {
         _ if state.disabled => (
             match state.mark {
@@ -706,14 +824,22 @@ pub(crate) fn readout(cfg: &Cyber, pal: &CyberPalette, state: State) -> Option<S
 
 /// Pads every label line by one cell on each side and paints the focus or glow bar in it.
 ///
-/// Focused: the label is inverted (ink on primary) and ends in a `◤` tip. Glowing (checked or
+/// Focused: the label is inverted (ink on primary) and ends in a `▛` tip. Glowing (checked or
 /// indeterminate with [`Cyber::glow`]): the label sits on a dark tint of the fill, also with a
 /// tip. Flat ([`Cyber::flat`]): no fill; focus only colours the label and tip. The padding is
 /// always there, so neither bar shifts the layout when it appears.
 pub(crate) fn bar(cfg: &Cyber, pal: &CyberPalette, state: State, lines: &mut [Line<'static>]) {
     let focused = state.focused && !state.disabled;
     let lit = cfg.glow && !cfg.flat && !state.disabled && state.mark != Mark::Unchecked;
-    let tint = mix(pal.ink, fill(pal, state).0, 0.22);
+    let cyber = cfg.design == Design::Cyberpunk;
+    let tip = |bg: Color| {
+        if cyber {
+            Span::styled("▛", Style::new().fg(bg))
+        } else {
+            Span::styled(" ", Style::new().bg(bg))
+        }
+    };
+    let tint = mix(pal.ink, fill(cfg, pal, state).0, 0.22);
     if focused && cfg.flat {
         // Flat focus: no fill, the label and its tip take the primary colour.
         for line in lines {
@@ -721,13 +847,21 @@ pub(crate) fn bar(cfg: &Cyber, pal: &CyberPalette, state: State, lines: &mut [Li
                 span.style = span.style.fg(pal.primary);
             }
             line.spans.insert(0, Span::raw(" "));
-            line.spans
-                .push(Span::styled("◤", Style::new().fg(pal.primary)));
+            line.spans.push(if cyber {
+                Span::styled("▛", Style::new().fg(pal.primary))
+            } else {
+                Span::raw(" ")
+            });
         }
         return;
     }
+    // Focus: Cyberpunk inverts the label (ink on primary); Neo-brutalism highlights it (ink on
+    // primary); Material and Dodai lay a tonal "state layer" under it.
     let paint = if focused {
-        Some((pal.primary, Some(pal.ink)))
+        match cfg.design {
+            Design::Cyberpunk | Design::Neobrutalism => Some((pal.primary, Some(pal.ink))),
+            Design::Material | Design::Dodai => Some((mix(pal.ink, pal.primary, 0.28), None)),
+        }
     } else if lit && tint != pal.ink {
         Some((tint, None))
     } else {
@@ -742,10 +876,7 @@ pub(crate) fn bar(cfg: &Cyber, pal: &CyberPalette, state: State, lines: &mut [Li
                         span.style = span.style.fg(fg);
                     }
                 }
-                (
-                    Span::styled(" ", Style::new().bg(bg)),
-                    Span::styled("◤", Style::new().fg(bg)),
-                )
+                (Span::styled(" ", Style::new().bg(bg)), tip(bg))
             }
             None => (Span::raw(" "), Span::raw(" ")),
         };
@@ -773,12 +904,12 @@ mod tests {
     #[test]
     fn inline_edges_follow_the_chamfer() {
         let cases = [
-            (Chamfer::Slab, "▐✓◤"),
-            (Chamfer::Diagonal, "◢✓◤"),
-            (Chamfer::AntiDiagonal, "◥✓◣"),
-            (Chamfer::Tab, "◢✓◣"),
-            (Chamfer::Bracket, "◀✓▌"),
-            (Chamfer::Sharp, "▐✓▌"),
+            (Chamfer::Slab, "█✓▛"),
+            (Chamfer::Diagonal, "▟✓▛"),
+            (Chamfer::AntiDiagonal, "▜✓▙"),
+            (Chamfer::Tab, "▟✓▙"),
+            (Chamfer::Bracket, "▐✓█"),
+            (Chamfer::Sharp, "█✓█"),
         ];
         for (chamfer, want) in cases {
             let g = glyph(
@@ -794,7 +925,7 @@ mod tests {
     #[test]
     fn anti_diagonal_left_edge_cuts_bottom() {
         let (l, _) = Chamfer::AntiDiagonal.inline_edges();
-        assert_eq!(l, "◥");
+        assert_eq!(l, "▜");
     }
 
     #[test]
@@ -803,15 +934,15 @@ mod tests {
         let cfg = Cyber::new();
         assert_eq!(
             text(&glyph(&cfg, &pal, st(Mark::Unchecked)).lines[0]),
-            "▐ ◤"
+            "█ ▛"
         );
-        assert_eq!(text(&glyph(&cfg, &pal, st(Mark::Mixed)).lines[0]), "▐−◤");
+        assert_eq!(text(&glyph(&cfg, &pal, st(Mark::Mixed)).lines[0]), "█−▛");
         let mixed = glyph(&cfg, &pal, st(Mark::Mixed));
         assert_eq!(mixed.lines[0].spans[0].style.fg, Some(pal.secondary));
     }
 
     #[test]
-    fn focused_unchecked_lights_the_edges() {
+    fn focused_unchecked_tints_the_slab_towards_primary() {
         let pal = CyberPalette::CYBERPUNK;
         let g = glyph(
             &Cyber::new(),
@@ -821,7 +952,9 @@ mod tests {
                 ..st(Mark::Unchecked)
             },
         );
-        assert_eq!(g.lines[0].spans[0].style.fg, Some(pal.primary));
+        let tinted = mix(pal.surface, pal.primary, 0.35);
+        assert_eq!(g.lines[0].spans[0].style.fg, Some(tinted));
+        assert_ne!(tinted, pal.surface);
     }
 
     #[test]
@@ -833,24 +966,220 @@ mod tests {
         );
         assert_eq!((g.width, g.lines.len(), g.label_row), (5, 3, 1));
         assert_eq!(text(&g.lines[1]), "  ✓  ");
-        assert_eq!(text(&g.lines[2]), "    ◤");
+        assert_eq!(text(&g.lines[2]), "    ▛");
         for l in &g.lines {
             assert_eq!(l.width(), 5);
         }
     }
 
     #[test]
-    fn unchecked_block_is_an_outline() {
-        let g = glyph(
-            &Cyber::new()
-                .size(CyberSize::Block)
-                .chamfer(Chamfer::Diagonal),
-            &CyberPalette::CYBERPUNK,
+    fn unchecked_block_is_a_dark_slab_with_the_same_cuts() {
+        let cfg = Cyber::new()
+            .size(CyberSize::Block)
+            .chamfer(Chamfer::Diagonal);
+        let pal = CyberPalette::CYBERPUNK;
+        let off = glyph(&cfg, &pal, st(Mark::Unchecked));
+        let on = glyph(&cfg, &pal, st(Mark::Checked));
+        assert_eq!(text(&off.lines[0]), "▟    ");
+        assert_eq!(text(&off.lines[2]), "    ▛");
+        // Same shape as the checked slab, only the colour differs.
+        assert_eq!(
+            off.lines.iter().map(text).collect::<Vec<_>>()[0],
+            text(&on.lines[0])
+        );
+        assert_eq!(off.lines[1].spans[0].style.bg, Some(pal.surface));
+    }
+
+    #[test]
+    fn cut_corners_are_block_elements_only() {
+        // No geometric wedges (◢ ◤ ...) that leave gaps in many fonts.
+        for chamfer in Chamfer::ALL {
+            for size in [CyberSize::Inline, CyberSize::Block] {
+                let g = glyph(
+                    &Cyber::new().chamfer(chamfer).size(size).shadow(true),
+                    &CyberPalette::CYBERPUNK,
+                    st(Mark::Checked),
+                );
+                for line in &g.lines {
+                    assert!(
+                        text(line).chars().all(|c| c == ' '
+                            || c == '✓'
+                            || ('\u{2580}'..='\u{259f}').contains(&c)),
+                        "{chamfer:?} {size:?}: {}",
+                        text(line)
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn every_design_keeps_the_symbol_sizes() {
+        for design in Design::ALL {
+            for size in [CyberSize::Inline, CyberSize::Block] {
+                for mark in [Mark::Unchecked, Mark::Checked, Mark::Mixed] {
+                    for (focused, disabled) in [(false, false), (true, false), (false, true)] {
+                        let cfg = Cyber::for_design(design).size(size);
+                        let g = glyph(
+                            &cfg,
+                            &design.palette(),
+                            State {
+                                mark,
+                                focused,
+                                disabled,
+                            },
+                        );
+                        let (w, h) = match size {
+                            CyberSize::Inline => (3, 1),
+                            CyberSize::Block => (5, 3),
+                        };
+                        assert_eq!(g.width, w, "{design:?} {size:?}");
+                        assert_eq!(g.lines.len(), h, "{design:?} {size:?}");
+                        for l in &g.lines {
+                            assert_eq!(l.width(), usize::from(w), "{design:?} {size:?} {mark:?}");
+                        }
+                        let shadowed = glyph(
+                            &cfg.shadow(true),
+                            &design.palette(),
+                            State {
+                                mark,
+                                focused,
+                                disabled,
+                            },
+                        );
+                        assert_eq!(shadowed.width, w + 1);
+                        for l in &shadowed.lines {
+                            assert_eq!(l.width(), usize::from(w) + 1, "{design:?} shadow");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn material_is_an_outline_off_and_a_filled_box_on() {
+        let pal = CyberPalette::MATERIAL;
+        let cfg = Cyber::for_design(Design::Material).size(CyberSize::Block);
+        let off = glyph(&cfg, &pal, st(Mark::Unchecked));
+        assert_eq!(text(&off.lines[0]), "╭───╮");
+        assert_eq!(text(&off.lines[2]), "╰───╯");
+        assert_eq!(off.lines[0].spans[0].style.fg, Some(pal.muted));
+        let on = glyph(&cfg, &pal, st(Mark::Checked));
+        assert_eq!(text(&on.lines[0]), "▟   ▙");
+        assert_eq!(text(&on.lines[2]), "▜   ▛");
+        // Mixed is filled with the primary colour too.
+        let mixed = glyph(&cfg, &pal, st(Mark::Mixed));
+        assert_eq!(mixed.lines[0].spans[1].style.bg, Some(pal.primary));
+        // Focus lights the outline.
+        let focused = glyph(
+            &cfg,
+            &pal,
+            State {
+                focused: true,
+                ..st(Mark::Unchecked)
+            },
+        );
+        assert_eq!(focused.lines[0].spans[0].style.fg, Some(pal.primary));
+    }
+
+    #[test]
+    fn dodai_washes_a_gradient_across_the_box() {
+        let pal = CyberPalette::DODAI;
+        let cfg = Cyber::for_design(Design::Dodai).size(CyberSize::Block);
+        let on = glyph(&cfg, &pal, st(Mark::Checked));
+        assert_eq!(text(&on.lines[0]), "▗▄▄▄▖");
+        assert_eq!(text(&on.lines[2]), "▝▀▀▀▘");
+        let bg = |i: usize| on.lines[1].spans[i].style.bg;
+        assert_eq!(bg(0), Some(pal.primary));
+        assert_eq!(bg(4), Some(pal.secondary));
+        assert_ne!(bg(0), bg(2));
+        // Off: flat glass.
+        let off = glyph(&cfg, &pal, st(Mark::Unchecked));
+        assert_eq!(
+            off.lines[1].spans[0].style.bg,
+            off.lines[1].spans[4].style.bg
+        );
+    }
+
+    #[test]
+    fn neobrutalism_has_a_heavy_border_and_flat_fill() {
+        let pal = CyberPalette::NEOBRUTALISM;
+        let cfg = Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block);
+        let on = glyph(&cfg, &pal, st(Mark::Checked));
+        assert_eq!(text(&on.lines[0]), "▛▀▀▀▜");
+        assert_eq!(text(&on.lines[1]), "▌ ✓ ▐");
+        assert_eq!(text(&on.lines[2]), "▙▄▄▄▟");
+        assert_eq!(on.lines[0].spans[0].style.fg, Some(pal.muted));
+        assert_eq!(on.lines[0].spans[0].style.bg, Some(pal.primary));
+        let inline = glyph(
+            &Cyber::for_design(Design::Neobrutalism),
+            &pal,
             st(Mark::Unchecked),
         );
-        assert_eq!(text(&g.lines[0]), "╱▀▀▀▜");
-        assert_eq!(text(&g.lines[1]), "▌   ▐");
-        assert_eq!(text(&g.lines[2]), "▙▄▄▄╱");
+        assert_eq!(text(&inline.lines[0]), "▌ ▐");
+    }
+
+    #[test]
+    fn designs_set_their_label_case_and_readout_words() {
+        let pal = CyberPalette::CYBERPUNK;
+        let label = |d: Design| {
+            text(&transform_label(
+                &Cyber::for_design(d),
+                &pal,
+                Line::from("abc"),
+            ))
+        };
+        assert_eq!(label(Design::Cyberpunk), "ABC");
+        assert_eq!(label(Design::Material), "abc");
+        assert_eq!(label(Design::Dodai), "abc");
+        assert_eq!(label(Design::Neobrutalism), "abc");
+        let on = |d: Design| {
+            readout(&Cyber::for_design(d).readout(true), &pal, st(Mark::Checked))
+                .unwrap()
+                .content
+                .to_string()
+        };
+        assert_eq!(on(Design::Cyberpunk), "//ONLINE");
+        assert_eq!(on(Design::Material), "On");
+        assert_eq!(on(Design::Neobrutalism), "ON");
+        // Uppercase set after the design still wins.
+        assert_eq!(
+            text(&transform_label(
+                &Cyber::for_design(Design::Material).uppercase(true),
+                &pal,
+                Line::from("abc")
+            )),
+            "ABC"
+        );
+    }
+
+    #[test]
+    fn non_cyber_focus_bar_has_no_tip() {
+        let pal = CyberPalette::MATERIAL;
+        let focused = State {
+            focused: true,
+            ..st(Mark::Unchecked)
+        };
+        let mut lines = vec![Line::from("X")];
+        bar(
+            &Cyber::for_design(Design::Material),
+            &pal,
+            focused,
+            &mut lines,
+        );
+        assert_eq!(text(&lines[0]), " X ");
+        assert!(lines[0].spans[1].style.bg.is_some());
+        let mut lines = vec![Line::from("X")];
+        bar(
+            &Cyber::for_design(Design::Neobrutalism),
+            &pal,
+            focused,
+            &mut lines,
+        );
+        assert_eq!(lines[0].spans[1].style.bg, Some(pal.primary));
+        assert_eq!(lines[0].spans[1].style.fg, Some(pal.ink));
+        assert_eq!(text(&lines[0]), " X ");
     }
 
     #[test]
@@ -973,7 +1302,7 @@ mod tests {
         );
         assert_eq!(g.width, 3);
         // The slab keeps its cut corner.
-        assert_eq!(text(&g.lines[0]), "▐✓◤");
+        assert_eq!(text(&g.lines[0]), "█✓▛");
         // No glow.
         let mut lines = vec![Line::from("X")];
         bar(&cfg, &pal, st(Mark::Checked), &mut lines);
@@ -986,7 +1315,7 @@ mod tests {
         };
         let mut lines = vec![Line::from("X")];
         bar(&cfg, &pal, focused, &mut lines);
-        assert_eq!(text(&lines[0]), " X◤");
+        assert_eq!(text(&lines[0]), " X▛");
         assert!(lines[0].spans.iter().all(|s| s.style.bg.is_none()));
         assert_eq!(lines[0].spans[1].style.fg, Some(pal.primary));
         assert_eq!(lines[0].spans[2].style.fg, Some(pal.primary));
@@ -1008,7 +1337,7 @@ mod tests {
         // Checked with glow: tinted bar ending in a tip.
         let mut lines = vec![Line::from("X")];
         bar(&cfg, &pal, st(Mark::Checked), &mut lines);
-        assert_eq!(text(&lines[0]), " X◤");
+        assert_eq!(text(&lines[0]), " X▛");
         assert!(lines[0].spans[1].style.bg.is_some());
         // Focused wins: ink on primary.
         let mut lines = vec![Line::from("X")];

@@ -186,7 +186,7 @@ fn render(frame: &mut Frame, app: &App) {
 fn render_header(frame: &mut Frame, area: Rect, app: &App) {
     let pal = app.pal();
     let title = Line::from(vec![
-        Span::styled(" ◢", Style::new().fg(pal.primary)),
+        Span::styled(" ▟", Style::new().fg(pal.primary)),
         Span::styled(
             " NETRUNNER // CYBERWARE CONTROL ",
             Style::new()
@@ -194,7 +194,7 @@ fn render_header(frame: &mut Frame, area: Rect, app: &App) {
                 .bg(pal.primary)
                 .add_modifier(Modifier::BOLD),
         ),
-        Span::styled("◤", Style::new().fg(pal.primary)),
+        Span::styled("▛", Style::new().fg(pal.primary)),
         Span::styled(
             format!(
                 "  {} · {}",
@@ -219,7 +219,7 @@ fn panel<'a>(title: &'a str, pal: CyberPalette) -> Block<'a> {
                     .bg(pal.secondary)
                     .add_modifier(Modifier::BOLD),
             ),
-            Span::styled("◤", Style::new().fg(pal.secondary)),
+            Span::styled("▛", Style::new().fg(pal.secondary)),
         ]))
 }
 
