@@ -2,9 +2,9 @@
 
 Output examples/vhs/05_alignment.gif
 
-Set FontSize 20
-Set Width 1020
-Set Height 550
+Set FontSize 24
+Set Width 940
+Set Height 520
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 

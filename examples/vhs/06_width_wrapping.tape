@@ -2,9 +2,9 @@
 
 Output examples/vhs/06_width_wrapping.gif
 
-Set FontSize 20
-Set Width 1130
-Set Height 860
+Set FontSize 22
+Set Width 1000
+Set Height 800
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 

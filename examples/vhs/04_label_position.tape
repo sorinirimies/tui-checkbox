@@ -2,9 +2,9 @@
 
 Output examples/vhs/04_label_position.gif
 
-Set FontSize 20
-Set Width 910
-Set Height 240
+Set FontSize 24
+Set Width 900
+Set Height 260
 Set Padding 20
 Set Theme "Catppuccin Mocha"
 
