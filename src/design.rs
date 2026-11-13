@@ -68,9 +68,11 @@ fn material(
             Line::from(Span::styled("╰───╯", edge)),
         ];
     }
+    // The inside is the surface tinted with the outline colour, so the bars read as a box.
+    let inside = mix(pal.surface, outline(pal, state), 0.3);
     vec![Line::from(vec![
         Span::styled("▐", edge),
-        Span::raw(" "),
+        Span::styled(" ", Style::new().bg(inside)),
         Span::styled("▌", edge),
     ])]
 }
