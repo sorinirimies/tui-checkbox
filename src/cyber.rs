@@ -20,7 +20,7 @@
 //!
 //! The same engine draws three more designs from the dodai-ui design system, picked with
 //! [`Design`] ([`Checkbox::design`]): Material (rounded outline, tonal fill), Dodai (soft
-//! gradient glass) and Neo-brutalism (heavy border, hard shadow).
+//! gradient glass) and Neo-brutalism (heavy border, flat fill).
 //!
 //! Enable it with [`Checkbox::cyber`]:
 //!
@@ -124,7 +124,7 @@ impl Chamfer {
 ///
 /// The shapes follow the four dodai-ui designs: [`Design::Cyberpunk`] cut-corner slabs,
 /// [`Design::Material`] a rounded outline that fills tonally, [`Design::Dodai`] soft
-/// gradient glass and [`Design::Neobrutalism`] a heavy border with a hard shadow.
+/// gradient glass and [`Design::Neobrutalism`] a heavy border on a flat fill.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash, Default)]
 pub enum Design {
     /// Chamfered slabs, readouts, glow and glitch (default).
@@ -418,7 +418,8 @@ impl Cyber {
 
     /// Draws a hard offset shadow below (and, for blocks, right of) the slab.
     ///
-    /// Adds one row and one column to the symbol.
+    /// Adds one row and one column to the symbol. Only the [`Design::Cyberpunk`] look has a
+    /// shadow; for the other designs this is a no-op.
     #[must_use]
     pub const fn shadow(mut self, shadow: bool) -> Self {
         self.shadow = shadow;
@@ -650,7 +651,8 @@ pub(crate) fn glyph(cfg: &Cyber, pal: &CyberPalette, state: State) -> Glyph {
         CyberSize::Inline => 3,
         CyberSize::Block => 5,
     };
-    if cfg.shadow && !cfg.flat {
+    // The shadow belongs to the Cyberpunk design; the others draw no shadow.
+    if cfg.shadow && !cfg.flat && cfg.design == Design::Cyberpunk {
         let colour = if state.disabled {
             pal.surface
         } else {
@@ -1047,9 +1049,11 @@ mod tests {
                                 disabled,
                             },
                         );
-                        assert_eq!(shadowed.width, w + 1);
+                        // Only the Cyberpunk design has a shadow.
+                        let extra = u16::from(design == Design::Cyberpunk);
+                        assert_eq!(shadowed.width, w + extra, "{design:?} shadow");
                         for l in &shadowed.lines {
-                            assert_eq!(l.width(), usize::from(w) + 1, "{design:?} shadow");
+                            assert_eq!(l.width(), usize::from(w + extra), "{design:?} shadow");
                         }
                     }
                 }

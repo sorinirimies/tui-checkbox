@@ -88,14 +88,14 @@ let constraint = ratatui::layout::Constraint::Length(checkbox.width());
 ![Designs Demo](examples/vhs/02_designs.gif)
 
 `Checkbox::design` draws the checkbox in one of the four dodai-ui design systems. The same
-options (`size`, `shadow`, `readout`, `glow`, `flat`, `palette`, `uppercase`) apply to all of them
+options (`size`, `readout`, `glow`, `flat`, `palette`, `uppercase`) apply to all of them
 through `Cyber::for_design(design)`:
 
 | `Design` | Off | On | Palette |
 |---|---|---|---|
 | `Material` | rounded outline `╭───╮` | tonal filled box with a tick | `CyberPalette::MATERIAL` |
 | `Dodai` | flat frosted glass | rounded primary → secondary gradient wash | `CyberPalette::DODAI` |
-| `Neobrutalism` | heavy border, flat fill | heavy border, main-colour fill, hard shadow | `CyberPalette::NEOBRUTALISM` |
+| `Neobrutalism` | heavy border, flat fill | heavy border, main-colour fill | `CyberPalette::NEOBRUTALISM` |
 | `Cyberpunk` | dark slab | neon slab, cut corners, readout `//ONLINE` | `CyberPalette::CYBERPUNK` |
 
 ```rust
@@ -104,7 +104,7 @@ use tui_checkbox::cyber::{Cyber, CyberSize, Design};
 
 let simple = Checkbox::new("Notifications", true).design(Design::Material);
 let chunky = Checkbox::new("Notifications", true).cyber(
-    Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block).shadow(true),
+    Cyber::for_design(Design::Neobrutalism).size(CyberSize::Block),
 );
 ```
 
@@ -156,7 +156,7 @@ let checkbox = Checkbox::new("Arm system", true)
 |---|---|
 | `chamfer` | Which corners are cut: `Slab` (bottom-right), `Diagonal`, `AntiDiagonal`, `Tab` (top), `Bracket` (left), `Sharp` |
 | `size` | `Inline` (`█✓▛`, one row) or `Block` (5×3 slab, label on the middle row) |
-| `shadow` | Hard offset shadow below (and right of) the slab; adds a row and a column |
+| `shadow` | Hard offset shadow below (and right of) the slab; adds a row and a column. Cyberpunk only: the other designs have none |
 | `flat` | Cut-corner slab only: no shadow, no glow, no filled focus bar (focus colours the label instead). Wins over `shadow` / `glow` in any order |
 | `uppercase` | Uppercases the label (default `true`) |
 | `readout` / `readout_texts` | A status readout after the label (block: on the row below) |

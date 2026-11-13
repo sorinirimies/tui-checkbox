@@ -1,7 +1,7 @@
 //! Example: the four dodai-ui design systems side by side — Cyberpunk, Material, Dodai and
 //! Neo-brutalism — each with checked, unchecked, indeterminate, focused and disabled boxes.
 //!
-//! Keys: `↑/↓` or `k/j` move, `Space` toggles, `s` inline/block, `h` shadow, `r` readout,
+//! Keys: `↑/↓` or `k/j` move, `Space` toggles, `s` inline/block, `h` shadow (Cyberpunk only), `r` readout,
 //! `q` quits.
 use std::io;
 
@@ -49,7 +49,7 @@ impl App {
             ],
             cursor: 0,
             block: false,
-            shadow: true,
+            shadow: false,
             readout: false,
         }
     }
@@ -127,7 +127,7 @@ fn render(frame: &mut Frame, app: &App) {
             key("S"),
             Span::raw(format!(" {}  ", if app.block { "block" } else { "inline" })),
             key("H"),
-            Span::raw(format!(" shadow {}  ", flag(app.shadow))),
+            Span::raw(format!(" cyber shadow {}  ", flag(app.shadow))),
             key("R"),
             Span::raw(format!(" readout {}  ", flag(app.readout))),
             key("Q"),
