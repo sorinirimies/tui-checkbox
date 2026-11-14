@@ -14,6 +14,10 @@ A customizable checkbox widget for [Ratatui](https://github.com/ratatui/ratatui)
 ## Preview
 ![checkbox](examples/vhs/01_checkbox.gif)
 
+The same checkbox in the four dodai-ui design systems (Material, Dodai, Neo-brutalism, Cyberpunk):
+
+![Design systems](examples/vhs/02b_designs_block.gif)
+
 ## Features
 
 - ☑️ Simple checkbox with label, plus an **indeterminate** (partly checked) state
@@ -111,6 +115,10 @@ let chunky = Checkbox::new("Notifications", true).cyber(
 Focus lays a tonal state layer under the label (Material, Dodai) or highlights it
 (Cyberpunk, Neo-brutalism). `cargo run --example checkbox_designs` shows them side by side.
 The options are listed under [Cyberpunk Look](#cyberpunk-look).
+### Block size
+
+![Designs at block size](examples/vhs/02b_designs_block.gif)
+
 Block symbols (5×3) draw the check and the dash large, in quadrant pixels across the centre, so the mark keeps its proportion to the box; inline symbols keep a single `✓` / `−`.
 
 ## Cyberpunk Look
