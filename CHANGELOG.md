@@ -4,6 +4,13 @@ All notable changes to this project are documented here. It is generated from
 [Conventional Commits](https://www.conventionalcommits.org) by
 [git-cliff](https://git-cliff.org) — do not edit it by hand.
 
+## [0.6.1](https://github.com/sorinirimies/tui-checkbox/compare/v0.6.0...v0.6.1) — 2026-11-15
+
+### 📚 Documentation
+
+- **readme:** Label the design GIFs as previews ([`6f0b1dd`](https://github.com/sorinirimies/tui-checkbox/commit/6f0b1dd8fc6974fead0ce53b06ba811e04d411ef))
+- **readme:** Show all four design systems at block size ([`60a7049`](https://github.com/sorinirimies/tui-checkbox/commit/60a70493fdc7d22346e168de3ce100d2bf499399))
+
 ## [0.6.0](https://github.com/sorinirimies/tui-checkbox/compare/v0.5.4...v0.6.0) — 2026-11-14
 
 ### ✨ Features
